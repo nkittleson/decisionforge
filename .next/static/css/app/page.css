@@ -1,0 +1,120 @@
+/*!****************************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[13].oneOf[5].use[2]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[13].oneOf[5].use[3]!./app/new-scenario-form.module.css ***!
+  \****************************************************************************************************************************************************************************************************************************************************************************/
+.new-scenario-form_header__W2gRb {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 24px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.new-scenario-form_headerLeft__84IqE {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.new-scenario-form_logo__8TcfB {
+  width: 24px;
+  height: 24px;
+}
+
+.new-scenario-form_headerTitle__wCvHB {
+  font-size: 14px;
+  color: #333;
+}
+
+.new-scenario-form_headerNav__vfluS {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.new-scenario-form_headerNav__vfluS a {
+  color: #666;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.new-scenario-form_avatar__9jgFN {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+}
+
+.new-scenario-form_mainContent__ICO6o {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.new-scenario-form_pageTitle__UxFuR {
+  font-size: 20px;
+  font-weight: normal;
+  color: #333;
+  margin-bottom: 24px;
+}
+
+.new-scenario-form_formSection__x4rn8 {
+  margin-bottom: 24px;
+}
+
+.new-scenario-form_formSection__x4rn8 label {
+  display: block;
+  font-size: 14px;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.new-scenario-form_textArea__GxVcL, .new-scenario-form_select__8ELQK {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.new-scenario-form_sourceList__q6u63 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.new-scenario-form_sourceItem__Y5QgN::before {
+  content: "•";
+  color: #4CAF50;
+  font-size: 32px;
+  line-height: 0;
+  margin-right: 8px;
+}
+
+.new-scenario-form_checkboxGroup__h92Jn {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.new-scenario-form_uploadArea__GyKC2 {
+  border: 2px dashed #ddd;
+  border-radius: 4px;
+  padding: 32px;
+  text-align: center;
+  margin-top: 16px;
+  background-color: #fafafa;
+  cursor: pointer;
+}
+
+.new-scenario-form_submitButton__PC1Fx {
+  width: 100%;
+  padding: 12px;
+  background-color: #1976d2;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 16px;
+  cursor: pointer;
+  margin-top: 24px;
+} 
