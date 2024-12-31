@@ -59,3 +59,35 @@
 .animate-connecting-progress {
   animation: connecting-progress 1.5s ease-in-out;
 } 
+
+.custom-popup .leaflet-popup-content-wrapper {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.custom-popup .leaflet-popup-content {
+  margin: 0;
+  padding: 0;
+}
+
+.custom-popup .leaflet-popup-tip {
+  background: white;
+} 
+
+/* Leaflet popup styles */
+.leaflet-popup-content-wrapper {
+  background: white;
+  border-radius: 8px;
+  padding: 0;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.leaflet-popup-content {
+  margin: 0;
+  padding: 0;
+}
+
+.leaflet-popup-tip {
+  background: white;
+} 
