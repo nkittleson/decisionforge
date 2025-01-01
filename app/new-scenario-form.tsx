@@ -1,5 +1,6 @@
-'use client'
+"use client"
 
+import { useRouter } from 'next/navigation';
 import { useState, useEffect } from "react"
 import { 
   Database, Radio, Satellite, FileText, 
@@ -9,11 +10,22 @@ import {
 import { format, addHours, differenceInSeconds } from 'date-fns'
 import { TacticalMap } from './components/tactical-map'
 
+// Add this new type for time constraints
+type TimeConstraint = {
+  value: string;
+  label: string;
+  desc: string;
+  color: string;
+  urgencyLevel: number;
+}
+
 interface PrimaryActionsProps {
   scenarioCompletion: number;
   validationStatus: 'valid' | 'invalid' | 'pending';
   isGeneratingCOAs: boolean;
-  isCertifying: boolean;
+  isValidating: boolean;
+  validationProgress: number;
+  onValidateScenario: () => void;
   onSaveDraft: () => void;
   onSaveTemplate: () => void;
   onLoadTemplate: () => void;
@@ -21,134 +33,149 @@ interface PrimaryActionsProps {
   onSubmitReview: () => void;
   onShareScenario: () => void;
   onExportDetails: () => void;
-  onCertifyScenario: () => void;
 }
 
 function ActionsPanel({
   scenarioCompletion,
   validationStatus,
   isGeneratingCOAs,
-  isCertifying,
+  isValidating,
+  validationProgress,
+  onValidateScenario,
   onSaveDraft,
   onSaveTemplate,
   onLoadTemplate,
   onGenerateCOAs,
   onSubmitReview,
   onShareScenario,
-  onExportDetails,
-  onCertifyScenario
+  onExportDetails
 }: PrimaryActionsProps) {
   return (
-    <div className="w-[90%] mx-auto">
-      <div className="bg-[#475569] rounded-xl">
-        <h2 className="text-3xl text-[#F8FAFC] font-medium p-8">ACTIONS PANEL</h2>
-        <div className="w-full px-8 pb-8">
-          <div className="bg-[#0F172A] rounded-xl p-8">
-            <div className="flex justify-between gap-4">
-              {/* Left Side - Scenario Management */}
-              <div className="flex-1">
-                <h3 className="text-[#94A3B8] mb-4">Scenario Management</h3>
-                <div className="space-y-2">
-                  <button onClick={onSaveDraft} 
-                    className="w-full bg-[#94A3B8] hover:bg-[#8696AB] text-white py-2 px-4 rounded">
-                    Save as Draft
-                  </button>
-                  <button onClick={onSaveTemplate} 
-                    className="w-full bg-[#94A3B8] hover:bg-[#8696AB] text-white py-2 px-4 rounded">
-                    Save as Template
-                  </button>
-                  <button onClick={onLoadTemplate} 
-                    className="w-full bg-[#94A3B8] hover:bg-[#8696AB] text-white py-2 px-4 rounded">
-                    Load Template
-                  </button>
-                </div>
+    <div className="bg-[#475569] rounded-xl max-w-[1200px] mx-auto">
+      <h2 className="text-3xl text-[#F8FAFC] font-medium p-8">ACTIONS PANEL</h2>
+      <div className="w-full px-8 pb-8">
+        <div className="bg-[#0F172A] rounded-xl p-8">
+          <div className="flex justify-between gap-4">
+            {/* Left Side - Scenario Management */}
+            <div className="flex-1 space-y-2">
+              <h3 className="text-[#94A3B8] mb-4">Scenario Management</h3>
+              <div className="space-y-2">
+                <button
+                  onClick={onSaveDraft}
+                  className="w-full bg-[#94A3B8] hover:bg-[#7C8CA4] text-white py-2 px-4 rounded"
+                >
+                  Save as Draft
+                </button>
+                <button
+                  onClick={onSaveTemplate}
+                  className="w-full bg-[#94A3B8] hover:bg-[#7C8CA4] text-white py-2 px-4 rounded"
+                >
+                  Save as Template
+                </button>
+                <button
+                  onClick={onLoadTemplate}
+                  className="w-full bg-[#94A3B8] hover:bg-[#7C8CA4] text-white py-2 px-4 rounded"
+                >
+                  Load Template
+                </button>
               </div>
+            </div>
 
-              {/* Center - Analysis Controls */}
-              <div className="flex-1">
-                <h3 className="text-[#94A3B8] mb-4">Analysis Controls</h3>
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[#F8FAFC]">Completion</span>
-                    <div className="flex-1 flex items-center gap-2">
-                      <div className="flex-1 h-2 bg-[#1E293B] rounded-full overflow-hidden">
+            {/* Center - Analysis Controls */}
+            <div className="flex-1 space-y-2">
+              <h3 className="text-[#94A3B8] mb-4">Analysis Controls</h3>
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <span className="text-[#F8FAFC]">Completion</span>
+                  <div className="flex-1 flex items-center gap-2">
+                    <div className="flex-1 h-2 bg-[#1E293B] rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-[#22C55E] transition-all duration-500"
+                        style={{ width: `${scenarioCompletion}%` }}
+                      />
+                    </div>
+                    <span className="text-[#F8FAFC]">{scenarioCompletion}%</span>
+                  </div>
+                </div>
+                <button
+                  onClick={onValidateScenario}
+                  disabled={isValidating || scenarioCompletion < 100}
+                  className={`w-full py-2 px-4 rounded mb-2 
+                    ${isValidating 
+                      ? 'bg-[#1E293B] cursor-wait' 
+                      : scenarioCompletion === 100 
+                        ? 'bg-[#94A3B8] hover:bg-[#7C8CA4]' 
+                        : 'bg-[#475569] cursor-not-allowed'
+                    } text-white`}
+                >
+                  {isValidating ? 'Validating...' : 'Validate Scenario'}
+                </button>
+                <div className="flex items-center gap-2 text-[#F8FAFC] text-sm">
+                  <span>Validation:</span>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 h-1.5 bg-[#1E293B] rounded-full overflow-hidden">
                         <div 
-                          className="h-full bg-[#3B82F6] transition-all duration-500" 
-                          style={{ width: `${scenarioCompletion}%` }}
+                          className={`h-full transition-all duration-500 ${
+                            validationStatus === 'valid' 
+                              ? 'bg-[#22C55E]' 
+                              : 'bg-[#EF4444]'
+                          }`}
+                          style={{ width: `${validationProgress}%` }}
                         />
                       </div>
-                      <span className="text-[#F8FAFC]">{scenarioCompletion}%</span>
+                      <span className={`px-2 py-1 rounded text-xs ${
+                        validationStatus === 'valid' 
+                          ? 'bg-[#22C55E]' 
+                          : 'bg-[#EF4444]'
+                      }`}>
+                        {validationStatus.toUpperCase()}
+                      </span>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 text-[#F8FAFC] text-sm">
-                    <button
-                      onClick={onCertifyScenario}
-                      disabled={scenarioCompletion < 80}
-                      className={`px-4 py-2 rounded ${
-                        scenarioCompletion >= 80 
-                          ? 'bg-green-500 hover:bg-green-600'
-                          : 'bg-gray-600 cursor-not-allowed'
-                      }`}
-                    >
-                      {isCertifying ? 'Certifying...' : 'Certify Scenario'}
-                    </button>
-                    <span>Validation:</span>
-                    <span className={`px-2 py-1 rounded text-xs ${
-                      validationStatus === 'valid' ? 'bg-green-500' : 
-                      validationStatus === 'invalid' ? 'bg-red-500' : 'bg-yellow-500'
-                    }`}>
-                      {validationStatus.toUpperCase()}
-                    </span>
-                  </div>
-                  <button
-                    onClick={onGenerateCOAs}
-                    disabled={scenarioCompletion < 100 || validationStatus !== 'valid'}
-                    className={`w-full py-2 px-4 rounded ${
-                      scenarioCompletion === 100 && validationStatus === 'valid'
-                        ? 'bg-[#FBBF24] hover:bg-[#F59E0B] text-black'
-                        : 'bg-[#64748B] text-gray-300 cursor-not-allowed'
-                    }`}
-                  >
-                    {isGeneratingCOAs ? 'Generating COAs...' : 'Generate COAs'}
-                  </button>
                 </div>
+                <button
+                  onClick={onGenerateCOAs}
+                  disabled={scenarioCompletion < 100 || validationStatus !== 'valid' || isGeneratingCOAs}
+                  className={`
+                    w-full py-2 px-4 rounded
+                    ${scenarioCompletion === 100 && validationStatus === 'valid' && !isGeneratingCOAs
+                      ? 'bg-[#FBBF24] hover:bg-[#F59E0B] text-white'
+                      : 'bg-[#475569] cursor-not-allowed text-[#94A3B8]'}
+                  `}
+                >
+                  {isGeneratingCOAs ? 'Generating...' : 'Generate COAs'}
+                </button>
               </div>
+            </div>
 
-              {/* Right Side - Workflow Actions */}
-              <div className="flex-1">
-                <h3 className="text-[#94A3B8] mb-4">Workflow Actions</h3>
-                <div className="space-y-2">
-                  <button 
-                    onClick={onSubmitReview} 
-                    disabled={!validationStatus === 'valid'}
-                    className={`w-full py-2 px-4 rounded ${
-                      validationStatus === 'valid'
-                        ? 'bg-[#7C8CA4] hover:bg-[#6F7D93] text-white'
-                        : 'bg-[#64748B] text-gray-300 cursor-not-allowed'
-                    }`}>
-                    Submit for Review
-                  </button>
-                  <button 
-                    onClick={onShareScenario}
-                    disabled={!validationStatus === 'valid'}
-                    className={`w-full py-2 px-4 rounded ${
-                      validationStatus === 'valid'
-                        ? 'bg-[#7C8CA4] hover:bg-[#6F7D93] text-white'
-                        : 'bg-[#64748B] text-gray-300 cursor-not-allowed'
-                    }`}>
-                    Share Scenario
-                  </button>
-                  <button 
-                    onClick={onExportDetails}
-                    disabled={!validationStatus === 'valid'}
-                    className={`w-full py-2 px-4 rounded ${
-                      validationStatus === 'valid'
-                        ? 'bg-[#7C8CA4] hover:bg-[#6F7D93] text-white'
-                        : 'bg-[#64748B] text-gray-300 cursor-not-allowed'
-                    }`}>
-                    Export Details
-                  </button>
-                </div>
+            {/* Right Side - Workflow Actions */}
+            <div className="flex-1 space-y-2">
+              <h3 className="text-[#94A3B8] mb-4">Workflow Actions</h3>
+              <div className="space-y-2">
+                <button
+                  onClick={onSubmitReview}
+                  disabled={scenarioCompletion < 100}
+                  className={`w-full py-2 px-4 rounded ${
+                    scenarioCompletion === 100 
+                      ? 'bg-[#7C8CA4] hover:bg-[#94A3B8] text-white' 
+                      : 'bg-[#475569] text-[#94A3B8] cursor-not-allowed'
+                  }`}
+                >
+                  Submit for Review
+                </button>
+                <button
+                  onClick={onShareScenario}
+                  className="w-full bg-[#7C8CA4] hover:bg-[#94A3B8] text-white py-2 px-4 rounded"
+                >
+                  Share Scenario
+                </button>
+                <button
+                  onClick={onExportDetails}
+                  className="w-full bg-[#7C8CA4] hover:bg-[#94A3B8] text-white py-2 px-4 rounded"
+                >
+                  Export Details
+                </button>
               </div>
             </div>
           </div>
@@ -158,7 +185,13 @@ function ActionsPanel({
   )
 }
 
-export function NewScenarioForm() {
+export default function NewScenarioForm() {
+  const router = useRouter();
+  
+  // Add these new state variables
+  const [isValidating, setIsValidating] = useState(false);
+  const [validationProgress, setValidationProgress] = useState(0);
+
   // Add these new state declarations at the top with your existing ones
   const [completion, setCompletion] = useState({
     scenarioDescription: false,
@@ -381,10 +414,10 @@ export function NewScenarioForm() {
   const [isGeneratingCOAs, setIsGeneratingCOAs] = useState(false)
 
   // Add these state variables
-  const [timeConstraintsComplete, setTimeConstraintsComplete] = useState(false)
-  const [environmentalConditionsComplete, setEnvironmentalConditionsComplete] = useState(false)
-  const [forcesComplete, setForcesComplete] = useState(false)
-  const [objectivesComplete, setObjectivesComplete] = useState(false)
+  const [timeConstraintsComplete, setTimeConstraintsComplete] = useState(false);
+  const [environmentalConditionsComplete, setEnvironmentalConditionsComplete] = useState(false);
+  const [forcesComplete, setForcesComplete] = useState(false);
+  const [objectivesComplete, setObjectivesComplete] = useState(false);
 
   // Add this effect to calculate completion based on sections
   useEffect(() => {
@@ -409,34 +442,52 @@ export function NewScenarioForm() {
     }
   }, [timeConstraintsComplete, environmentalConditionsComplete, forcesComplete, objectivesComplete])
 
-  // Add this effect to sync the two completion states
-  useEffect(() => {
-    setScenarioCompletion(completionPercentage)
-  }, [completionPercentage])
-
   // Add handlers
   const handleSaveDraft = () => { /* implementation */ }
   const handleSaveTemplate = () => { /* implementation */ }
   const handleLoadTemplate = () => { /* implementation */ }
   const handleGenerateCOAs = () => { 
-    setIsGeneratingCOAs(true)
-    setTimeout(() => setIsGeneratingCOAs(false), 2000)
+    console.log('Generating COAs...');
+    setIsGeneratingCOAs(true);
+    router.push('/output');
   }
   const handleSubmitReview = () => { /* implementation */ }
   const handleShareScenario = () => { /* implementation */ }
   const handleExportDetails = () => { /* implementation */ }
 
-  // Add this with your other state declarations
-  const [isCertifying, setIsCertifying] = useState(false)
+  // Update the useEffect that calculates scenario completion
+  useEffect(() => {
+    // Use the same completion tracking for both bars
+    setScenarioCompletion(completionPercentage);
+    
+    // Update validation status based on completion
+    if (completionPercentage === 100) {
+      setValidationStatus('valid');
+    } else if (completionPercentage > 0) {
+      setValidationStatus('pending');
+    } else {
+      setValidationStatus('pending');
+    }
+  }, [completionPercentage]); // Add completionPercentage as dependency
 
-  // Add this with your other handlers
-  const handleCertifyScenario = () => {
-    setIsCertifying(true)
-    setTimeout(() => {
-      setValidationStatus('valid')
-      setIsCertifying(false)
-    }, 1500)
-  }
+  // Add this new function
+  const handleValidateScenario = () => {
+    setIsValidating(true);
+    setValidationStatus('pending');
+    setValidationProgress(0);
+    
+    // Simulate validation steps
+    const steps = [25, 50, 75, 100];
+    steps.forEach((progress, index) => {
+      setTimeout(() => {
+        setValidationProgress(progress);
+        if (progress === 100) {
+          setValidationStatus('valid');
+          setIsValidating(false);
+        }
+      }, (index + 1) * 800);
+    });
+  };
 
   return (
     <div className="space-y-4">
@@ -722,7 +773,9 @@ export function NewScenarioForm() {
         scenarioCompletion={scenarioCompletion}
         validationStatus={validationStatus}
         isGeneratingCOAs={isGeneratingCOAs}
-        isCertifying={isCertifying}
+        isValidating={isValidating}
+        validationProgress={validationProgress}
+        onValidateScenario={handleValidateScenario}
         onSaveDraft={handleSaveDraft}
         onSaveTemplate={handleSaveTemplate}
         onLoadTemplate={handleLoadTemplate}
@@ -730,7 +783,6 @@ export function NewScenarioForm() {
         onSubmitReview={handleSubmitReview}
         onShareScenario={handleShareScenario}
         onExportDetails={handleExportDetails}
-        onCertifyScenario={handleCertifyScenario}
       />
     </div>
   )

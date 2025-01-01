@@ -3,6 +3,7 @@ import { MapContainer, TileLayer, ZoomControl, LayerGroup, Circle, Marker, Popup
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
 import { useState, useRef, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 
 // Create a click handler component
 function MapClickHandler({ onMapClick }: { onMapClick: (e: L.LeafletMouseEvent) => void }) {
@@ -26,9 +27,9 @@ interface MapComponentProps {
 export default function MapComponent({ onResourceAction }: MapComponentProps) {
   const [layers, setLayers] = useState({
     command: true,
-    military: true,
-    infrastructure: true,
-    intelligence: true
+    military: false,
+    infrastructure: false,
+    intelligence: false
   })
 
   const [incidents, setIncidents] = useState<{
@@ -69,9 +70,23 @@ export default function MapComponent({ onResourceAction }: MapComponentProps) {
   const positions = {
     hq: {
       position: [62.0548, -132.2644],
-      name: 'HQ Command',
+      name: 'Main Command HQ',
       status: 'blue'
     },
+    deployed_hq: [
+      {
+        position: [62.3248, -132.2644],
+        name: 'Forward HQ North',
+        status: 'blue',
+        type: 'Deployed Command Post'
+      },
+      {
+        position: [61.7848, -132.2644],
+        name: 'Forward HQ South',
+        status: 'blue',
+        type: 'Deployed Command Post'
+      }
+    ],
     heli_base_1: {
       position: [62.1548, -132.0644],
       units: [
@@ -249,7 +264,79 @@ export default function MapComponent({ onResourceAction }: MapComponentProps) {
         size: 'Platoon',
         description: 'Southern valley support'
       }
-    ]
+    ],
+    intelligence: {
+      sensors: [
+        {
+          position: [62.1548, -132.3644],
+          name: 'Ground Sensor Array Alpha',
+          type: 'sensor',
+          status: 'active',
+          coverage: '15km radius'
+        },
+        {
+          position: [61.9548, -132.1644],
+          name: 'Ground Sensor Array Bravo',
+          type: 'sensor',
+          status: 'active',
+          coverage: '15km radius'
+        }
+      ],
+      sigint: [
+        {
+          position: [62.0548, -132.4644],
+          name: 'SIGINT Station 1',
+          type: 'sigint',
+          status: 'active',
+          coverage: '25km radius'
+        },
+        {
+          position: [61.8548, -132.3644],
+          name: 'SIGINT Station 2',
+          type: 'sigint',
+          status: 'active',
+          coverage: '25km radius'
+        }
+      ]
+    },
+    infrastructure: {
+      power: [
+        {
+          position: [62.0948, -132.3644],
+          name: 'Main Power Station',
+          type: 'power',
+          status: 'operational',
+          capacity: '100MW',
+          coverage: 'Regional Grid'
+        },
+        {
+          position: [61.9148, -132.4644],
+          name: 'Substation Alpha',
+          type: 'power',
+          status: 'operational',
+          capacity: '25MW',
+          coverage: 'Local Grid'
+        }
+      ],
+      comms: [
+        {
+          position: [62.1248, -132.2644],
+          name: 'Communications Hub Alpha',
+          type: 'comms',
+          status: 'operational',
+          coverage: '50km radius',
+          systems: ['Military Network', 'Civilian Network']
+        },
+        {
+          position: [61.8848, -132.5644],
+          name: 'Communications Hub Bravo',
+          type: 'comms',
+          status: 'operational',
+          coverage: '50km radius',
+          systems: ['Military Network', 'Emergency Services']
+        }
+      ]
+    }
   }
 
   const handleMapClick = (e: L.LeafletMouseEvent) => {
@@ -276,20 +363,35 @@ export default function MapComponent({ onResourceAction }: MapComponentProps) {
   }
 
   const createMilitaryMarker = (type: string, status: string) => {
-    const symbols = {
-      hq: '★',
-      air: '⬢',
-      qrf: '▲',
-      infantry: '■',
-      medical: '+',
-      supply: '◆'
+    const shapes = {
+      hq: `<div class="w-8 h-8 flex items-center justify-center bg-${status}-500 border-2 border-white text-white font-bold rotate-45">
+             <div class="rotate-[-45deg]">★</div>
+           </div>`,
+      air: `<div class="w-8 h-8 flex items-center justify-center bg-${status}-500 border-2 border-white text-white font-bold" 
+             style="clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)">
+              ⬢
+            </div>`,
+      qrf: `<div class="w-8 h-8 flex items-center justify-center bg-${status}-500 border-2 border-white text-white font-bold"
+             style="clip-path: polygon(50% 0%, 100% 100%, 0% 100%)">
+              ▲
+            </div>`,
+      infantry: `<div class="w-8 h-8 flex items-center justify-center bg-${status}-500 border-2 border-white text-white font-bold">
+                    ■
+                  </div>`,
+      medical: `<div class="w-8 h-8 flex items-center justify-center bg-${status}-500 border-2 border-white text-white font-bold rounded-full">
+                 +
+                </div>`,
+      supply: `<div class="w-8 h-8 flex items-center justify-center bg-${status}-500 border-2 border-white text-white font-bold"
+                style="clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%)">
+                ◆
+              </div>`
     }
 
     return L.divIcon({
-      html: `<div class="w-6 h-6 rounded-lg bg-${status}-500 border-2 border-white flex items-center justify-center text-white font-bold">${symbols[type] || '●'}</div>`,
+      html: shapes[type] || `<div class="w-8 h-8 rounded-lg bg-${status}-500 border-2 border-white flex items-center justify-center text-white font-bold">●</div>`,
       className: '',
-      iconSize: [24, 24],
-      iconAnchor: [12, 12]
+      iconSize: [32, 32],
+      iconAnchor: [16, 16]
     })
   }
 
@@ -333,11 +435,14 @@ export default function MapComponent({ onResourceAction }: MapComponentProps) {
     // Implement load template logic
   }
 
+  const router = useRouter();
+
   const handleGenerateCOAs = () => {
-    setIsGeneratingCOAs(true)
-    // Implement COA generation logic
-    setTimeout(() => setIsGeneratingCOAs(false), 2000) // Simulated delay
-  }
+    setIsGeneratingCOAs(true);
+    // Add console.log to debug
+    console.log('Generating COAs...');
+    router.push('/output');
+  };
 
   const handleSubmitReview = () => {
     // Implement submit review logic
@@ -448,7 +553,7 @@ export default function MapComponent({ onResourceAction }: MapComponentProps) {
         <div className="absolute bottom-4 right-4 z-[1000] bg-[#1E293B] rounded-lg p-4 shadow-lg min-w-[250px]">
           <h3 
             className="text-[#F8FAFC] font-medium mb-3 cursor-pointer hover:text-blue-400"
-            onClick={onResourceAction}
+            onClick={() => onResourceAction()}
           >
             Assigned Resources
           </h3>
@@ -495,35 +600,88 @@ export default function MapComponent({ onResourceAction }: MapComponentProps) {
           />
           <ZoomControl position="bottomright" />
 
-          {/* Command Layer */}
-          {layers.command && (
-            <LayerGroup>
-              <Marker
-                position={positions.hq.position as L.LatLngExpression}
-                icon={createMilitaryMarker('hq', positions.hq.status)}
-              >
-                <Popup>
-                  <div>
-                    <h3 className="text-lg mb-2">{positions.hq.name}</h3>
-                    <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-                      <span>Command Status: Active</span>
-                    </div>
-                    <button 
-                      onClick={() => handleAddToScenario('command', 'hq', positions.hq.name, 'blue')}
-                      className="w-full bg-blue-600 text-white py-2 rounded mt-2"
-                    >
-                      Add to Scenario
-                    </button>
-                  </div>
-                </Popup>
-              </Marker>
-            </LayerGroup>
-          )}
+{/* Command Layer */}
+{layers.command && (
+  <LayerGroup>
+    {/* Main HQ */}
+    <Marker
+      position={positions.hq.position as L.LatLngExpression}
+      icon={createMilitaryMarker('hq', positions.hq.status)}
+    >
+      <Popup>
+        <div>
+          <h3 className="text-lg mb-2">{positions.hq.name}</h3>
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+            <span>Command Status: Active</span>
+          </div>
+          <button 
+            onClick={() => handleAddToScenario('command', 'hq', positions.hq.name, 'blue')}
+            className="w-full bg-blue-600 text-white py-2 rounded mt-2"
+          >
+            Add to Scenario
+          </button>
+        </div>
+      </Popup>
+    </Marker>
 
+    {/* Deployed HQs */}
+    {positions.deployed_hq.map((dhq, index) => (
+      <Marker
+        key={`deployed_hq_${index}`}
+        position={dhq.position as L.LatLngExpression}
+        icon={createMilitaryMarker('hq', dhq.status)}
+      >
+        <Popup>
+          <div>
+            <h3 className="text-lg mb-2">{dhq.name}</h3>
+            <div className="space-y-1">
+              <div className="flex justify-between">
+                <span>Type:</span>
+                <span>{dhq.type}</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 mt-2">
+              <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+              <span>Command Status: Active</span>
+            </div>
+            <button 
+              onClick={() => handleAddToScenario('command', `deployed_hq_${index}`, dhq.name, 'blue')}
+              className="w-full bg-blue-600 text-white py-2 rounded mt-2"
+            >
+              Add to Scenario
+            </button>
+          </div>
+        </Popup>
+      </Marker>
+    ))}
+  </LayerGroup>
+)}
           {/* Military Layer */}
           {layers.military && (
             <LayerGroup>
+              {/* Helicopter Range Circles - Place BEFORE markers */}
+              <Circle
+                center={positions.heli_base_1.position as L.LatLngExpression}
+                radius={75000}
+                pathOptions={{ color: '#10B981', weight: 1, dashArray: '5,10', fillOpacity: 0.05 }}
+              />
+              <Circle
+                center={positions.heli_base_1.position as L.LatLngExpression}
+                radius={150000}
+                pathOptions={{ color: '#10B981', weight: 1, dashArray: '10,15', fillOpacity: 0.02 }}
+              />
+              <Circle
+                center={positions.heli_base_2.position as L.LatLngExpression}
+                radius={75000}
+                pathOptions={{ color: '#10B981', weight: 1, dashArray: '5,10', fillOpacity: 0.05 }}
+              />
+              <Circle
+                center={positions.heli_base_2.position as L.LatLngExpression}
+                radius={150000}
+                pathOptions={{ color: '#10B981', weight: 1, dashArray: '10,15', fillOpacity: 0.02 }}
+              />
+
               {/* Helicopter Base 1 */}
               {positions.heli_base_1.units.map((unit) => (
                 <Marker
@@ -809,6 +967,193 @@ export default function MapComponent({ onResourceAction }: MapComponentProps) {
                     </div>
                   </Popup>
                 </Marker>
+              ))}
+
+              {/* Power Stations */}
+              {positions.infrastructure.power.map((facility, index) => (
+                <Marker
+                  key={`power_${index}`}
+                  position={facility.position as L.LatLngExpression}
+                  icon={L.divIcon({
+                    html: `<div class="w-8 h-8 flex items-center justify-center bg-yellow-500 border-2 border-white text-white text-sm">⚡</div>`,
+                    className: '',
+                    iconSize: [32, 32],
+                    iconAnchor: [16, 16]
+                  })}
+                >
+                  <Popup>
+                    <div>
+                      <h3 className="text-lg mb-2">{facility.name}</h3>
+                      <div className="space-y-1">
+                        <div className="flex justify-between">
+                          <span>Type:</span>
+                          <span>Power Station</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Capacity:</span>
+                          <span>{facility.capacity}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Coverage:</span>
+                          <span>{facility.coverage}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 mt-2">
+                        <span className="w-2 h-2 rounded-full bg-yellow-500"></span>
+                        <span>Status: {facility.status}</span>
+                      </div>
+                      <button 
+                        onClick={() => handleAddToScenario('infrastructure', facility.name.toLowerCase(), facility.name, 'yellow')}
+                        className="w-full bg-blue-600 text-white py-2 rounded mt-2"
+                      >
+                        Add to Scenario
+                      </button>
+                    </div>
+                  </Popup>
+                </Marker>
+              ))}
+
+              {/* Substations */}
+              {positions.infrastructure.comms.map((hub, index) => (
+                <Marker
+                  key={`comms_${index}`}
+                  position={hub.position as L.LatLngExpression}
+                  icon={L.divIcon({
+                    html: `<div class="w-8 h-8 flex items-center justify-center bg-blue-500 border-2 border-white text-white text-sm">📶</div>`,
+                    className: '',
+                    iconSize: [32, 32],
+                    iconAnchor: [16, 16]
+                  })}
+                >
+                  <Popup>
+                    <div>
+                      <h3 className="text-lg mb-2">{hub.name}</h3>
+                      <div className="space-y-1">
+                        <div className="flex justify-between">
+                          <span>Type:</span>
+                          <span>Substation</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Coverage:</span>
+                          <span>{hub.coverage}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 mt-2">
+                        <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                        <span>Status: {hub.status}</span>
+                      </div>
+                      <button 
+                        onClick={() => handleAddToScenario('infrastructure', hub.name.toLowerCase(), hub.name, 'blue')}
+                        className="w-full bg-blue-600 text-white py-2 rounded mt-2"
+                      >
+                        Add to Scenario
+                      </button>
+                    </div>
+                  </Popup>
+                </Marker>
+              ))}
+            </LayerGroup>
+          )}
+
+          {/* Intelligence Layer */}
+          {layers.intelligence && (
+            <LayerGroup>
+              {/* Sensor Arrays */}
+              {positions.intelligence.sensors.map((sensor, index) => (
+                <Marker
+                  key={`sensor_${index}`}
+                  position={sensor.position as L.LatLngExpression}
+                  icon={L.divIcon({
+                    html: `<div class="w-6 h-6 flex items-center justify-center bg-emerald-500 border-2 border-white text-white font-bold">S</div>`,
+                    className: '',
+                    iconSize: [24, 24],
+                    iconAnchor: [12, 12]
+                  })}
+                >
+                  <Popup>
+                    <div>
+                      <h3 className="text-lg mb-2">{sensor.name}</h3>
+                      <div className="space-y-1">
+                        <div className="flex justify-between">
+                          <span>Type:</span>
+                          <span>Ground Sensor Array</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Coverage:</span>
+                          <span>{sensor.coverage}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 mt-2">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                        <span>Status: {sensor.status}</span>
+                      </div>
+                      <button 
+                        onClick={() => handleAddToScenario('intelligence', `sensor_${index}`, sensor.name, 'emerald')}
+                        className="w-full bg-blue-600 text-white py-2 rounded mt-2"
+                      >
+                        Add to Scenario
+                      </button>
+                    </div>
+                  </Popup>
+                </Marker>
+              ))}
+
+              {/* SIGINT Stations */}
+              {positions.intelligence.sigint.map((station, index) => (
+                <Marker
+                  key={`sigint_${index}`}
+                  position={station.position as L.LatLngExpression}
+                  icon={L.divIcon({
+                    html: `<div class="w-6 h-6 flex items-center justify-center bg-purple-500 border-2 border-white text-white font-bold">📡</div>`,
+                    className: '',
+                    iconSize: [24, 24],
+                    iconAnchor: [12, 12]
+                  })}
+                >
+                  <Popup>
+                    <div>
+                      <h3 className="text-lg mb-2">{station.name}</h3>
+                      <div className="space-y-1">
+                        <div className="flex justify-between">
+                          <span>Type:</span>
+                          <span>SIGINT Station</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Coverage:</span>
+                          <span>{station.coverage}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 mt-2">
+                        <span className="w-2 h-2 rounded-full bg-purple-500"></span>
+                        <span>Status: {station.status}</span>
+                      </div>
+                      <button 
+                        onClick={() => handleAddToScenario('intelligence', `sigint_${index}`, station.name, 'purple')}
+                        className="w-full bg-blue-600 text-white py-2 rounded mt-2"
+                      >
+                        Add to Scenario
+                      </button>
+                    </div>
+                  </Popup>
+                </Marker>
+              ))}
+
+              {/* Coverage Circles */}
+              {positions.intelligence.sensors.map((sensor, index) => (
+                <Circle
+                  key={`sensor_range_${index}`}
+                  center={sensor.position as L.LatLngExpression}
+                  radius={15000}
+                  pathOptions={{ color: '#059669', weight: 1, dashArray: '5,10', fillOpacity: 0.1 }}
+                />
+              ))}
+              {positions.intelligence.sigint.map((station, index) => (
+                <Circle
+                  key={`sigint_range_${index}`}
+                  center={station.position as L.LatLngExpression}
+                  radius={25000}
+                  pathOptions={{ color: '#9333EA', weight: 1, dashArray: '5,10', fillOpacity: 0.1 }}
+                />
               ))}
             </LayerGroup>
           )}
