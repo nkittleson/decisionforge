@@ -440,168 +440,170 @@ export function NewScenarioForm() {
 
   return (
     <div className="space-y-4">
-      <div className="w-full min-h-screen">
-        <div className="w-[90%] mx-auto py-8">
-          <h1 className={`text-4xl text-[#94A3B8] font-semibold mb-12 transition-all duration-500 ${
-            isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-          }`}>
-            SCENARIO OVERVIEW
-          </h1>
-          
-          <div className="flex gap-8 mb-8">
-            <div className="flex-1 bg-[#475569] rounded-xl">
-              <h2 className="text-3xl text-[#F8FAFC] font-medium p-8">MISSION PARAMETERS</h2>
-              <div className="w-full px-8 pb-8 space-y-8">
-                <div className="bg-[#0F172A] rounded-xl p-8">
-                  <label className="block text-[#94A3B8] mb-2">Scenario Description</label>
-                  <div className="relative">
-                    <textarea 
-                      className="w-full h-64 p-4 rounded-md bg-white text-[#1E293B] text-lg resize-none"
-                      placeholder="Describe the current situation and objectives..."
-                    />
-                    <button
-                      onClick={handleScenarioSubmit}
-                      className="absolute bottom-4 right-4 p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-full"
-                    >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-
-                <div className="bg-[#0F172A] rounded-xl p-8">
-                  <label className="block text-[#94A3B8] mb-4">Time Constraint</label>
-                  <div className="grid grid-cols-5 gap-4">
-                    {timeConstraints.map((constraint) => (
+      <div className="min-h-screen bg-[#0F172A] animate-fade-in">
+        <div className="w-full min-h-screen">
+          <div className="w-[90%] mx-auto py-8">
+            <h1 className={`text-4xl text-[#94A3B8] font-semibold mb-12 transition-all duration-500 ${
+              isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+            }`}>
+              SCENARIO OVERVIEW
+            </h1>
+            
+            <div className="flex gap-8 mb-8">
+              <div className="flex-1 bg-[#475569] rounded-xl">
+                <h2 className="text-3xl text-[#F8FAFC] font-medium p-8">MISSION PARAMETERS</h2>
+                <div className="w-full px-8 pb-8 space-y-8">
+                  <div className="bg-[#0F172A] rounded-xl p-8">
+                    <label className="block text-[#94A3B8] mb-2">Scenario Description</label>
+                    <div className="relative">
+                      <textarea 
+                        className="w-full h-64 p-4 rounded-md bg-white text-[#1E293B] text-lg resize-none"
+                        placeholder="Describe the current situation and objectives..."
+                      />
                       <button
-                        key={constraint.value}
-                        onClick={() => {
-                          setSelectedTime(constraint.value)
-                          handleTimeSelect()
-                        }}
-                        className={`
-                          relative p-4 rounded-lg transition-all duration-300
-                          ${selectedTime === constraint.value 
-                            ? 'bg-[#1E293B] ring-2 ring-offset-2 ring-offset-[#0F172A] ring-' + constraint.color
-                            : 'bg-[#1E293B]/50 hover:bg-[#1E293B]'
-                          }
-                        `}
+                        onClick={handleScenarioSubmit}
+                        className="absolute bottom-4 right-4 p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-full"
                       >
-                        <div className="space-y-2">
-                          <div className={`w-full h-1 rounded-full bg-${constraint.color}/20`}>
-                            <div 
-                              className={`h-full rounded-full bg-${constraint.color} transition-all duration-500`}
-                              style={{ 
-                                width: selectedTime === constraint.value ? '100%' : '0%',
-                              }}
-                            />
-                          </div>
-                          <p className="text-[#F8FAFC] font-medium">{constraint.label}</p>
-                          <p className="text-[#94A3B8] text-sm">{constraint.desc}</p>
-                        </div>
-                        <div 
-                          className={`absolute -top-1 -right-1 w-3 h-3 rounded-full
-                            ${selectedTime === constraint.value ? 'bg-' + constraint.color : 'bg-transparent'}
-                          `}
-                        />
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
                       </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="bg-[#0F172A] rounded-xl p-8">
-                  <div className="flex gap-8">
-                    <div className="w-1/2">
-                      <div 
-                        className={`
-                          border-2 border-dashed border-[#334155] rounded-lg aspect-square
-                          flex flex-col items-center justify-center gap-4
-                          ${dragging ? 'bg-[#334155]' : 'bg-transparent'}
-                          cursor-pointer hover:border-[#4CAF50] hover:bg-[#334155]/20 transition-all duration-300
-                        `}
-                        onDragOver={(e) => {
-                          e.preventDefault()
-                          setDragging(true)
-                        }}
-                        onDragLeave={() => setDragging(false)}
-                        onDrop={(e) => {
-                          e.preventDefault()
-                          setDragging(false)
-                        }}
-                      >
-                        <Upload className="w-8 h-8 text-[#94A3B8]" />
-                        <p className="text-[#94A3B8] text-center px-8">
-                          Drag and drop Scenario Description files here or click to browse
-                        </p>
-                      </div>
                     </div>
+                  </div>
 
-                    <div className="w-1/2 bg-[#1E293B]/50 rounded-lg p-6">
-                      <h3 className="text-[#94A3B8] font-medium mb-4">Scenario Analysis</h3>
-                      <div className="space-y-4">
-                        <div className="flex items-center justify-between p-3 bg-[#0F172A] rounded-lg">
-                          <div className="flex items-center gap-3">
-                            <Clock className="w-5 h-5 text-[#94A3B8]" />
-                            <span className="text-[#F8FAFC]">Current Time</span>
-                          </div>
-                          <span className="text-[#94A3B8] font-mono">
-                            {format(currentTime, 'HH:mm:ss')}
-                          </span>
-                        </div>
-
-                        <div className="flex items-center justify-between p-3 bg-[#0F172A] rounded-lg">
-                          <div className="flex items-center gap-3">
-                            <Clock className="w-5 h-5 text-[#4CAF50]" />
-                            <span className="text-[#F8FAFC]">Time Remaining</span>
-                          </div>
-                          <span className={`font-mono ${
-                            selectedTime 
-                              ? countdown === '00:00:00' 
-                                ? 'text-red-500' 
-                                : 'text-[#4CAF50]'
-                              : 'text-[#94A3B8]'
-                          }`}>
-                            {countdown}
-                          </span>
-                        </div>
-
-                        <div className="flex items-center justify-between p-3 bg-[#0F172A] rounded-lg">
-                          <div className="flex items-center gap-3">
-                            <Database className="w-5 h-5 text-[#3B82F6]" />
-                            <span className="text-[#F8FAFC]">Active Sources</span>
-                          </div>
-                          <span className="text-[#3B82F6] font-mono">{activeSources.length}/10</span>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-3">
-                          <div className="flex items-center justify-between p-3 bg-[#0F172A] rounded-lg">
-                            <div className="flex items-center gap-2">
-                              <FileText className="w-4 h-4 text-[#F59E0B]" />
-                              <span className="text-[#94A3B8]">Docs</span>
-                            </div>
-                              <span className="text-[#F8FAFC] font-mono">0</span>
-                          </div>
-
-                          <div className="flex items-center justify-between p-3 bg-[#0F172A] rounded-lg">
-                            <div className="flex items-center gap-2">
-                              <Database className="w-4 h-4 text-[#EC4899]" />
-                              <span className="text-[#94A3B8]">Available</span>
-                            </div>
-                            <span className="text-[#F8FAFC] font-mono">{additionalSources.length}</span>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                          <span className="text-white">Completion</span>
-                          <div className="flex-1 flex items-center gap-2">
-                            <div className="flex-1 h-2 bg-[#1E293B] rounded-full overflow-hidden">
+                  <div className="bg-[#0F172A] rounded-xl p-8">
+                    <label className="block text-[#94A3B8] mb-4">Time Constraint</label>
+                    <div className="grid grid-cols-5 gap-4">
+                      {timeConstraints.map((constraint) => (
+                        <button
+                          key={constraint.value}
+                          onClick={() => {
+                            setSelectedTime(constraint.value)
+                            handleTimeSelect()
+                          }}
+                          className={`
+                            relative p-4 rounded-lg transition-all duration-300
+                            ${selectedTime === constraint.value 
+                              ? 'bg-[#1E293B] ring-2 ring-offset-2 ring-offset-[#0F172A] ring-' + constraint.color
+                              : 'bg-[#1E293B]/50 hover:bg-[#1E293B]'
+                            }
+                          `}
+                        >
+                          <div className="space-y-2">
+                            <div className={`w-full h-1 rounded-full bg-${constraint.color}/20`}>
                               <div 
-                                className="h-full bg-[#3B82F6] transition-all duration-500"
-                                style={{ width: `${completionPercentage}%` }}
+                                className={`h-full rounded-full bg-${constraint.color} transition-all duration-500`}
+                                style={{ 
+                                  width: selectedTime === constraint.value ? '100%' : '0%',
+                                }}
                               />
                             </div>
-                            <span className="text-white">{completionPercentage}%</span>
+                            <p className="text-[#F8FAFC] font-medium">{constraint.label}</p>
+                            <p className="text-[#94A3B8] text-sm">{constraint.desc}</p>
+                          </div>
+                          <div 
+                            className={`absolute -top-1 -right-1 w-3 h-3 rounded-full
+                              ${selectedTime === constraint.value ? 'bg-' + constraint.color : 'bg-transparent'}
+                            `}
+                          />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="bg-[#0F172A] rounded-xl p-8">
+                    <div className="flex gap-8">
+                      <div className="w-1/2">
+                        <div 
+                          className={`
+                            border-2 border-dashed border-[#334155] rounded-lg aspect-square
+                            flex flex-col items-center justify-center gap-4
+                            ${dragging ? 'bg-[#334155]' : 'bg-transparent'}
+                            cursor-pointer hover:border-[#4CAF50] hover:bg-[#334155]/20 transition-all duration-300
+                          `}
+                          onDragOver={(e) => {
+                            e.preventDefault()
+                            setDragging(true)
+                          }}
+                          onDragLeave={() => setDragging(false)}
+                          onDrop={(e) => {
+                            e.preventDefault()
+                            setDragging(false)
+                          }}
+                        >
+                          <Upload className="w-8 h-8 text-[#94A3B8]" />
+                          <p className="text-[#94A3B8] text-center px-8">
+                            Drag and drop Scenario Description files here or click to browse
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="w-1/2 bg-[#1E293B]/50 rounded-lg p-6">
+                        <h3 className="text-[#94A3B8] font-medium mb-4">Scenario Analysis</h3>
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between p-3 bg-[#0F172A] rounded-lg">
+                            <div className="flex items-center gap-3">
+                              <Clock className="w-5 h-5 text-[#94A3B8]" />
+                              <span className="text-[#F8FAFC]">Current Time</span>
+                            </div>
+                            <span className="text-[#94A3B8] font-mono">
+                              {format(currentTime, 'HH:mm:ss')}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center justify-between p-3 bg-[#0F172A] rounded-lg">
+                            <div className="flex items-center gap-3">
+                              <Clock className="w-5 h-5 text-[#4CAF50]" />
+                              <span className="text-[#F8FAFC]">Time Remaining</span>
+                            </div>
+                            <span className={`font-mono ${
+                              selectedTime 
+                                ? countdown === '00:00:00' 
+                                  ? 'text-red-500' 
+                                  : 'text-[#4CAF50]'
+                                : 'text-[#94A3B8]'
+                            }`}>
+                              {countdown}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center justify-between p-3 bg-[#0F172A] rounded-lg">
+                            <div className="flex items-center gap-3">
+                              <Database className="w-5 h-5 text-[#3B82F6]" />
+                              <span className="text-[#F8FAFC]">Active Sources</span>
+                            </div>
+                            <span className="text-[#3B82F6] font-mono">{activeSources.length}/10</span>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="flex items-center justify-between p-3 bg-[#0F172A] rounded-lg">
+                              <div className="flex items-center gap-2">
+                                <FileText className="w-4 h-4 text-[#F59E0B]" />
+                                <span className="text-[#94A3B8]">Docs</span>
+                              </div>
+                                <span className="text-[#F8FAFC] font-mono">0</span>
+                            </div>
+
+                            <div className="flex items-center justify-between p-3 bg-[#0F172A] rounded-lg">
+                              <div className="flex items-center gap-2">
+                                <Database className="w-4 h-4 text-[#EC4899]" />
+                                <span className="text-[#94A3B8]">Available</span>
+                              </div>
+                              <span className="text-[#F8FAFC] font-mono">{additionalSources.length}</span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <span className="text-white">Completion</span>
+                            <div className="flex-1 flex items-center gap-2">
+                              <div className="flex-1 h-2 bg-[#1E293B] rounded-full overflow-hidden">
+                                <div 
+                                  className="h-full bg-[#3B82F6] transition-all duration-500"
+                                  style={{ width: `${completionPercentage}%` }}
+                                />
+                              </div>
+                              <span className="text-white">{completionPercentage}%</span>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -609,51 +611,51 @@ export function NewScenarioForm() {
                   </div>
                 </div>
               </div>
-            </div>
 
-            <div className="flex-1 bg-[#475569] rounded-xl">
-              <h2 className="text-3xl text-[#F8FAFC] font-medium p-8">INTELLIGENCE SOURCES</h2>
-              <div className="w-full px-8 pb-8">
-                <div className="bg-[#0F172A] rounded-xl p-8">
-                  <div className="relative">
-                    <div className={`bg-[#0F172A] rounded-lg p-6 ${dragTarget === 'active' ? 'ring-2 ring-[#4CAF50]' : ''}`}
-                      onDragOver={(e) => handleDragOver(e, 'active')}
-                      onDragLeave={handleDragLeave}
-                      onDrop={(e) => handleDrop(e, 'active')}
-                    >
-                      <h3 className="text-[#94A3B8] mb-4">Active Intelligence Sources</h3>
-                      <div className={`grid grid-cols-2 gap-4 ${dragTarget === 'active' ? 'opacity-50' : ''}`}>
-                        {activeSources.map((source) => (
-                          <div 
-                            key={source.id}
-                            draggable
-                            onDragStart={(e) => handleDragStart(e, source, 'active')}
-                            className="flex items-center gap-3 p-3 bg-[#1E293B] rounded-lg cursor-move hover:bg-[#252f43] transition-all duration-300"
-                          >
-                            <div className="p-2 rounded-full bg-[#2A3441]">
-                              {getIconComponent(source.iconType, !isConnecting(source.id))}
-                            </div>
-                            <span className="text-[#F8FAFC] font-medium">{source.name}</span>
-                            <div className="ml-auto">
-                              {isConnecting(source.id) ? (
-                                <div className="flex items-center gap-2">
-                                  <div className="h-1 w-16 bg-[#1E293B] rounded-full overflow-hidden">
-                                    <div className="h-full bg-gradient-to-r from-red-500 via-yellow-500 to-green-500 animate-connecting-progress" />
+              <div className="flex-1 bg-[#475569] rounded-xl">
+                <h2 className="text-3xl text-[#F8FAFC] font-medium p-8">INTELLIGENCE SOURCES</h2>
+                <div className="w-full px-8 pb-8">
+                  <div className="bg-[#0F172A] rounded-xl p-8">
+                    <div className="relative">
+                      <div className={`bg-[#0F172A] rounded-lg p-6 ${dragTarget === 'active' ? 'ring-2 ring-[#4CAF50]' : ''}`}
+                        onDragOver={(e) => handleDragOver(e, 'active')}
+                        onDragLeave={handleDragLeave}
+                        onDrop={(e) => handleDrop(e, 'active')}
+                      >
+                        <h3 className="text-[#94A3B8] mb-4">Active Intelligence Sources</h3>
+                        <div className={`grid grid-cols-2 gap-4 ${dragTarget === 'active' ? 'opacity-50' : ''}`}>
+                          {activeSources.map((source) => (
+                            <div 
+                              key={source.id}
+                              draggable
+                              onDragStart={(e) => handleDragStart(e, source, 'active')}
+                              className="flex items-center gap-3 p-3 bg-[#1E293B] rounded-lg cursor-move hover:bg-[#252f43] transition-all duration-300"
+                            >
+                              <div className="p-2 rounded-full bg-[#2A3441]">
+                                {getIconComponent(source.iconType, !isConnecting(source.id))}
+                              </div>
+                              <span className="text-[#F8FAFC] font-medium">{source.name}</span>
+                              <div className="ml-auto">
+                                {isConnecting(source.id) ? (
+                                  <div className="flex items-center gap-2">
+                                    <div className="h-1 w-16 bg-[#1E293B] rounded-full overflow-hidden">
+                                      <div className="h-full bg-gradient-to-r from-red-500 via-yellow-500 to-green-500 animate-connecting-progress" />
+                                    </div>
+                                    <span className="text-xs text-[#94A3B8]">Connecting...</span>
                                   </div>
-                                  <span className="text-xs text-[#94A3B8]">Connecting...</span>
-                                </div>
-                              ) : (
-                                <div className="w-2 h-2 rounded-full bg-[#4CAF50] animate-pulse" />
-                              )}
+                                ) : (
+                                  <div className="w-2 h-2 rounded-full bg-[#4CAF50] animate-pulse" />
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        ))}
-                      </div>
-                      {dragTarget === 'active' && (
-                        <div className="absolute inset-0 border-2 border-dashed border-[#4CAF50] rounded-lg flex items-center justify-center bg-[#1B1B35]/50">
-                          <p className="text-[#4CAF50] text-lg font-medium">Drop to Activate Source</p>
+                          ))}
                         </div>
-                      )}
+                        {dragTarget === 'active' && (
+                          <div className="absolute inset-0 border-2 border-dashed border-[#4CAF50] rounded-lg flex items-center justify-center bg-[#1B1B35]/50">
+                            <p className="text-[#4CAF50] text-lg font-medium">Drop to Activate Source</p>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -710,28 +712,28 @@ export function NewScenarioForm() {
                 </div>
               </div>
             </div>
-          </div>
 
-          <div className="w-full">
-            <TacticalMap onResourceAction={handleResourceAction} />
+            <div className="w-full">
+              <TacticalMap onResourceAction={handleResourceAction} />
+            </div>
           </div>
         </div>
-      </div>
 
-      <ActionsPanel
-        scenarioCompletion={scenarioCompletion}
-        validationStatus={validationStatus}
-        isGeneratingCOAs={isGeneratingCOAs}
-        isCertifying={isCertifying}
-        onSaveDraft={handleSaveDraft}
-        onSaveTemplate={handleSaveTemplate}
-        onLoadTemplate={handleLoadTemplate}
-        onGenerateCOAs={handleGenerateCOAs}
-        onSubmitReview={handleSubmitReview}
-        onShareScenario={handleShareScenario}
-        onExportDetails={handleExportDetails}
-        onCertifyScenario={handleCertifyScenario}
-      />
+        <ActionsPanel
+          scenarioCompletion={scenarioCompletion}
+          validationStatus={validationStatus}
+          isGeneratingCOAs={isGeneratingCOAs}
+          isCertifying={isCertifying}
+          onSaveDraft={handleSaveDraft}
+          onSaveTemplate={handleSaveTemplate}
+          onLoadTemplate={handleLoadTemplate}
+          onGenerateCOAs={handleGenerateCOAs}
+          onSubmitReview={handleSubmitReview}
+          onShareScenario={handleShareScenario}
+          onExportDetails={handleExportDetails}
+          onCertifyScenario={handleCertifyScenario}
+        />
+      </div>
     </div>
   )
 }
