@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { 
   Database, Radio, Satellite, FileText, 
   Users, FileSpreadsheet, Globe, Wifi, 
@@ -22,6 +22,14 @@ interface PrimaryActionsProps {
   onShareScenario: () => void;
   onExportDetails: () => void;
   onCertifyScenario: () => void;
+}
+
+type TimeConstraint = {
+  value: string;
+  label: string;
+  desc: string;
+  color: string;
+  urgencyLevel: number;
 }
 
 function ActionsPanel({
@@ -65,7 +73,7 @@ function ActionsPanel({
               </div>
 
               {/* Center - Analysis Controls */}
-              <div className="flex-1">
+              <div className="flex-1 space-y-2">
                 <h3 className="text-[#94A3B8] mb-4">Analysis Controls</h3>
                 <div className="space-y-4">
                   <div className="flex items-center gap-2">
@@ -73,7 +81,7 @@ function ActionsPanel({
                     <div className="flex-1 flex items-center gap-2">
                       <div className="flex-1 h-2 bg-[#1E293B] rounded-full overflow-hidden">
                         <div 
-                          className="h-full bg-[#3B82F6] transition-all duration-500" 
+                          className="h-full bg-[#22C55E] transition-all duration-500"
                           style={{ width: `${scenarioCompletion}%` }}
                         />
                       </div>
@@ -84,19 +92,19 @@ function ActionsPanel({
                     <button
                       onClick={onCertifyScenario}
                       disabled={scenarioCompletion < 80}
-                      className={`px-4 py-2 rounded ${
-                        scenarioCompletion >= 80 
-                          ? 'bg-green-500 hover:bg-green-600'
-                          : 'bg-gray-600 cursor-not-allowed'
-                      }`}
+                      className={`px-4 py-2 rounded bg-blue-600 text-white
+                        ${scenarioCompletion >= 80 
+                          ? 'hover:bg-blue-700'
+                          : 'opacity-50 cursor-not-allowed'
+                        }`}
                     >
                       {isCertifying ? 'Certifying...' : 'Certify Scenario'}
                     </button>
                     <span>Validation:</span>
-                    <span className={`px-2 py-1 rounded text-xs ${
-                      validationStatus === 'valid' ? 'bg-green-500' : 
-                      validationStatus === 'invalid' ? 'bg-red-500' : 'bg-yellow-500'
-                    }`}>
+                    <span className={`
+                      px-2 py-1 rounded text-xs
+                      ${validationStatus === 'valid' ? 'bg-[#22C55E]' : 'bg-gray-600'}
+                    `}>
                       {validationStatus.toUpperCase()}
                     </span>
                   </div>
@@ -361,23 +369,22 @@ export function NewScenarioForm() {
 
   // Add these new handlers
   const handleScenarioSubmit = () => {
+    handleObjectivesComplete();
     setCompletion(prev => ({ ...prev, scenarioDescription: true }))
   }
 
-  const handleTimeSelect = () => {
-    setCompletion(prev => ({ ...prev, timeConstraint: true }))
-  }
-
   const handleIntelSourcesSet = () => {
+    handleEnvironmentalComplete();
     setCompletion(prev => ({ ...prev, intelSources: true }))
   }
 
   const handleResourceAction = () => {
+    handleForcesComplete();
     setCompletion(prev => ({ ...prev, resourceSelector: true }))
   }
 
   const [scenarioCompletion, setScenarioCompletion] = useState(0)
-  const [validationStatus, setValidationStatus] = useState<'valid' | 'invalid' | 'pending'>('pending')
+  const [validationStatus, setValidationStatus] = useState<'pending' | 'valid' | 'invalid'>('pending')
   const [isGeneratingCOAs, setIsGeneratingCOAs] = useState(false)
 
   // Add these state variables
@@ -398,15 +405,6 @@ export function NewScenarioForm() {
     const completedSections = sections.filter(Boolean).length
     const percentage = Math.round((completedSections / sections.length) * 100)
     setScenarioCompletion(percentage)
-
-    // Update validation status based on completion
-    if (percentage === 100) {
-      setValidationStatus('valid')
-    } else if (percentage > 0) {
-      setValidationStatus('pending')
-    } else {
-      setValidationStatus('pending')
-    }
   }, [timeConstraintsComplete, environmentalConditionsComplete, forcesComplete, objectivesComplete])
 
   // Add this effect to sync the two completion states
@@ -418,9 +416,14 @@ export function NewScenarioForm() {
   const handleSaveDraft = () => { /* implementation */ }
   const handleSaveTemplate = () => { /* implementation */ }
   const handleLoadTemplate = () => { /* implementation */ }
-  const handleGenerateCOAs = () => { 
+  const handleGenerateCOAs = () => {
     setIsGeneratingCOAs(true)
-    setTimeout(() => setIsGeneratingCOAs(false), 2000)
+    // Show loading animation for 2 seconds
+    setTimeout(() => {
+      setIsGeneratingCOAs(false)
+      setValidationStatus('valid')
+      window.location.href = '/output'
+    }, 2000)
   }
   const handleSubmitReview = () => { /* implementation */ }
   const handleShareScenario = () => { /* implementation */ }
@@ -438,171 +441,312 @@ export function NewScenarioForm() {
     }, 1500)
   }
 
+  // Add this to your existing state declarations
+  const [scenarioDescription, setScenarioDescription] = useState('')
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  // Add this effect right after your other useEffect declarations
+  useEffect(() => {
+    const text = `URBAN INFRASTRUCTURE BREACH
+
+INCIDENT DETAILS
+
+Multiple unauthorized access attempts detected at 3 critical infrastructure nodes
+Pattern suggests coordinated cyber-physical attack
+Affected systems: Power distribution, Traffic control, Emergency services communication
+Initial breach point identified at substation 7-A
+Unauthorized credential use detected at 2 auxiliary stations
+
+IMMEDIATE OBJECTIVES
+
+Contain unauthorized access
+Prevent cascade failure
+Maintain critical services
+Identify and apprehend threat actors`
+
+    let index = 0
+    
+    const startTyping = (startIndex: number) => {
+      const interval = setInterval(() => {
+        if (startIndex < text.length) {
+          setScenarioDescription(text.substring(0, startIndex + 1))
+          startIndex++
+          
+          if (textareaRef.current) {
+            textareaRef.current.scrollTop = textareaRef.current.scrollHeight
+          }
+
+          // Adjust timing for next character
+          if (text[startIndex] === '\n') {
+            clearInterval(interval)
+            setTimeout(() => startTyping(startIndex), 200)
+          } else if (text[startIndex] === ' ') {
+            clearInterval(interval)
+            setTimeout(() => startTyping(startIndex), 75)
+          }
+        } else {
+          clearInterval(interval)
+        }
+      }, Math.random() * 30 + 20)
+
+      return interval
+    }
+
+    // Start the typing animation after 1 second
+    const initialDelay = setTimeout(() => {
+      startTyping(0)
+    }, 1000)
+
+    // Cleanup
+    return () => {
+      clearTimeout(initialDelay)
+    }
+  }, [])
+
+  // Add these handlers near your other handlers
+  const handleTimeConstraintComplete = () => {
+    setTimeConstraintsComplete(true);
+  };
+
+  const handleEnvironmentalComplete = () => {
+    setEnvironmentalConditionsComplete(true);
+  };
+
+  const handleForcesComplete = () => {
+    setForcesComplete(true);
+  };
+
+  const handleObjectivesComplete = () => {
+    setObjectivesComplete(true);
+  };
+
+  const [scenarioSubmitted, setScenarioSubmitted] = useState(false)
+  const [sourcesSet, setSourcesSet] = useState(false)
+
+  // Add this state to handle client-side rendering
+  const [isClient, setIsClient] = useState(false)
+
+  // Add this effect near the top of your component
+  useEffect(() => {
+    setIsClient(true)
+  }, [])
+
   return (
-    <div className="space-y-4">
-      <div className="min-h-screen bg-[#0F172A] animate-fade-in">
-        <div className="w-full min-h-screen">
-          <div className="w-[90%] mx-auto py-8">
-            <h1 className={`text-4xl text-[#94A3B8] font-semibold mb-12 transition-all duration-500 ${
-              isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-            }`}>
-              SCENARIO OVERVIEW
-            </h1>
-            
-            <div className="flex gap-8 mb-8">
-              <div className="flex-1 bg-[#475569] rounded-xl">
-                <h2 className="text-3xl text-[#F8FAFC] font-medium p-8">MISSION PARAMETERS</h2>
-                <div className="w-full px-8 pb-8 space-y-8">
-                  <div className="bg-[#0F172A] rounded-xl p-8">
-                    <label className="block text-[#94A3B8] mb-2">Scenario Description</label>
-                    <div className="relative">
-                      <textarea 
-                        className="w-full h-64 p-4 rounded-md bg-white text-[#1E293B] text-lg resize-none"
-                        placeholder="Describe the current situation and objectives..."
-                      />
-                      <button
-                        onClick={handleScenarioSubmit}
-                        className="absolute bottom-4 right-4 p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-full"
-                      >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
+    <div suppressHydrationWarning className="space-y-4">
+      {isClient ? (
+        <div className="min-h-screen bg-[#0F172A] animate-fade-in">
+          <div className="fixed top-0 left-0 right-0 bg-[#0F172A] z-50 border-b border-slate-800">
+            <div className="w-[90%] mx-auto py-4">
+              <h1 className={`text-4xl text-[#94A3B8] font-semibold transition-all duration-500 ${
+                isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+              }`}>
+                SCENARIO OVERVIEW
+              </h1>
+            </div>
+          </div>
 
-                  <div className="bg-[#0F172A] rounded-xl p-8">
-                    <label className="block text-[#94A3B8] mb-4">Time Constraint</label>
-                    <div className="grid grid-cols-5 gap-4">
-                      {timeConstraints.map((constraint) => (
+          <div className="pt-20">
+            <div className="w-[90%] mx-auto">
+              <div className="flex gap-8 mb-8">
+                <div className="flex-1 bg-[#475569] rounded-xl">
+                  <h2 className="text-3xl text-[#F8FAFC] font-medium p-8">MISSION PARAMETERS</h2>
+                  <div className="w-full px-8 pb-8 space-y-8">
+                    <div className="bg-[#0F172A] rounded-xl p-8">
+                      <label className="block text-[#94A3B8] mb-2">Scenario Description</label>
+                      <div className="relative">
+                        <textarea 
+                          ref={textareaRef}
+                          className="w-full h-64 p-4 rounded-md bg-white text-[#1E293B] text-lg resize-none"
+                          placeholder="Describe the current situation and objectives..."
+                          value={scenarioDescription}
+                          readOnly
+                        />
                         <button
-                          key={constraint.value}
                           onClick={() => {
-                            setSelectedTime(constraint.value)
-                            handleTimeSelect()
+                            handleScenarioSubmit()
+                            setCompletion(prev => ({ ...prev, scenarioDescription: true }))
+                            setScenarioSubmitted(true)
                           }}
-                          className={`
-                            relative p-4 rounded-lg transition-all duration-300
-                            ${selectedTime === constraint.value 
-                              ? 'bg-[#1E293B] ring-2 ring-offset-2 ring-offset-[#0F172A] ring-' + constraint.color
-                              : 'bg-[#1E293B]/50 hover:bg-[#1E293B]'
-                            }
-                          `}
+                          className={`absolute bottom-4 right-4 p-2 
+                            ${scenarioSubmitted 
+                              ? 'bg-green-500/80' // Change to green when submitted
+                              : 'bg-blue-600/80 hover:bg-blue-700/80'}
+                            text-white rounded-full transition-all duration-300 
+                            hover:scale-110 hover:shadow-lg 
+                            ${scenarioSubmitted ? 'hover:shadow-green-500/20' : 'hover:shadow-blue-500/20'}
+                            active:scale-95
+                            disabled:opacity-50 disabled:cursor-not-allowed
+                            group`}
                         >
-                          <div className="space-y-2">
-                            <div className={`w-full h-1 rounded-full bg-${constraint.color}/20`}>
-                              <div 
-                                className={`h-full rounded-full bg-${constraint.color} transition-all duration-500`}
-                                style={{ 
-                                  width: selectedTime === constraint.value ? '100%' : '0%',
-                                }}
-                              />
-                            </div>
-                            <p className="text-[#F8FAFC] font-medium">{constraint.label}</p>
-                            <p className="text-[#94A3B8] text-sm">{constraint.desc}</p>
-                          </div>
-                          <div 
-                            className={`absolute -top-1 -right-1 w-3 h-3 rounded-full
-                              ${selectedTime === constraint.value ? 'bg-' + constraint.color : 'bg-transparent'}
-                            `}
-                          />
+                          <svg 
+                            className="w-5 h-5 transition-transform duration-300 group-hover:rotate-12" 
+                            fill="none" 
+                            stroke="currentColor" 
+                            viewBox="0 0 24 24"
+                          >
+                            <path 
+                              strokeLinecap="round" 
+                              strokeLinejoin="round" 
+                              strokeWidth={2} 
+                              d="M5 13l4 4L19 7" 
+                            />
+                          </svg>
                         </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="bg-[#0F172A] rounded-xl p-8">
-                    <div className="flex gap-8">
-                      <div className="w-1/2">
-                        <div 
-                          className={`
-                            border-2 border-dashed border-[#334155] rounded-lg aspect-square
-                            flex flex-col items-center justify-center gap-4
-                            ${dragging ? 'bg-[#334155]' : 'bg-transparent'}
-                            cursor-pointer hover:border-[#4CAF50] hover:bg-[#334155]/20 transition-all duration-300
-                          `}
-                          onDragOver={(e) => {
-                            e.preventDefault()
-                            setDragging(true)
-                          }}
-                          onDragLeave={() => setDragging(false)}
-                          onDrop={(e) => {
-                            e.preventDefault()
-                            setDragging(false)
-                          }}
-                        >
-                          <Upload className="w-8 h-8 text-[#94A3B8]" />
-                          <p className="text-[#94A3B8] text-center px-8">
-                            Drag and drop Scenario Description files here or click to browse
-                          </p>
-                        </div>
                       </div>
+                    </div>
 
-                      <div className="w-1/2 bg-[#1E293B]/50 rounded-lg p-6">
-                        <h3 className="text-[#94A3B8] font-medium mb-4">Scenario Analysis</h3>
-                        <div className="space-y-4">
-                          <div className="flex items-center justify-between p-3 bg-[#0F172A] rounded-lg">
-                            <div className="flex items-center gap-3">
-                              <Clock className="w-5 h-5 text-[#94A3B8]" />
-                              <span className="text-[#F8FAFC]">Current Time</span>
-                            </div>
-                            <span className="text-[#94A3B8] font-mono">
-                              {format(currentTime, 'HH:mm:ss')}
-                            </span>
-                          </div>
-
-                          <div className="flex items-center justify-between p-3 bg-[#0F172A] rounded-lg">
-                            <div className="flex items-center gap-3">
-                              <Clock className="w-5 h-5 text-[#4CAF50]" />
-                              <span className="text-[#F8FAFC]">Time Remaining</span>
-                            </div>
-                            <span className={`font-mono ${
-                              selectedTime 
-                                ? countdown === '00:00:00' 
-                                  ? 'text-red-500' 
-                                  : 'text-[#4CAF50]'
-                                : 'text-[#94A3B8]'
-                            }`}>
-                              {countdown}
-                            </span>
-                          </div>
-
-                          <div className="flex items-center justify-between p-3 bg-[#0F172A] rounded-lg">
-                            <div className="flex items-center gap-3">
-                              <Database className="w-5 h-5 text-[#3B82F6]" />
-                              <span className="text-[#F8FAFC]">Active Sources</span>
-                            </div>
-                            <span className="text-[#3B82F6] font-mono">{activeSources.length}/10</span>
-                          </div>
-
-                          <div className="grid grid-cols-2 gap-3">
-                            <div className="flex items-center justify-between p-3 bg-[#0F172A] rounded-lg">
-                              <div className="flex items-center gap-2">
-                                <FileText className="w-4 h-4 text-[#F59E0B]" />
-                                <span className="text-[#94A3B8]">Docs</span>
-                              </div>
-                                <span className="text-[#F8FAFC] font-mono">0</span>
-                            </div>
-
-                            <div className="flex items-center justify-between p-3 bg-[#0F172A] rounded-lg">
-                              <div className="flex items-center gap-2">
-                                <Database className="w-4 h-4 text-[#EC4899]" />
-                                <span className="text-[#94A3B8]">Available</span>
-                              </div>
-                              <span className="text-[#F8FAFC] font-mono">{additionalSources.length}</span>
-                            </div>
-                          </div>
-
-                          <div className="flex items-center gap-2">
-                            <span className="text-white">Completion</span>
-                            <div className="flex-1 flex items-center gap-2">
-                              <div className="flex-1 h-2 bg-[#1E293B] rounded-full overflow-hidden">
+                    <div className="bg-[#0F172A] rounded-xl p-8">
+                      <label className="block text-[#94A3B8] mb-4">Time Constraint</label>
+                      <div className="grid grid-cols-5 gap-4">
+                        {timeConstraints.map((constraint) => (
+                          <button
+                            key={constraint.value}
+                            onClick={() => {
+                              setSelectedTime(constraint.value)
+                              setTimeConstraintsComplete(true)
+                              setCompletion(prev => ({ ...prev, timeConstraint: true }))
+                              
+                              // Update deadline when time is selected
+                              const hoursToAdd = {
+                                immediate: 1,
+                                urgent: 6,
+                                priority: 24,
+                                routine: 72,
+                                planning: 96
+                              }[constraint.value]
+                              
+                              const newDeadline = new Date()
+                              newDeadline.setHours(newDeadline.getHours() + hoursToAdd)
+                              setDeadline(newDeadline)
+                            }}
+                            className={`
+                              relative p-4 rounded-lg transition-all duration-300 cursor-pointer
+                              ${selectedTime === constraint.value 
+                                ? 'bg-[#1E293B] ring-2 ring-offset-2 ring-offset-[#0F172A]'
+                                : 'bg-[#1E293B]/50 hover:bg-[#1E293B]'
+                              }
+                            `}
+                          >
+                            <div className="space-y-2">
+                              <div className="w-full h-1 rounded-full" 
+                                style={{ backgroundColor: `${constraint.color}20` }}
+                              >
                                 <div 
-                                  className="h-full bg-[#3B82F6] transition-all duration-500"
-                                  style={{ width: `${completionPercentage}%` }}
+                                  className="h-full rounded-full transition-all duration-500"
+                                  style={{ 
+                                    width: selectedTime === constraint.value ? '100%' : '0%',
+                                    backgroundColor: constraint.color
+                                  }}
                                 />
                               </div>
-                              <span className="text-white">{completionPercentage}%</span>
+                              <p className="text-[#F8FAFC] font-medium">{constraint.label}</p>
+                              <p className="text-[#94A3B8] text-sm">{constraint.desc}</p>
+                            </div>
+                            <div 
+                              className="absolute -top-1 -right-1 w-3 h-3 rounded-full"
+                              style={{ 
+                                backgroundColor: selectedTime === constraint.value ? constraint.color : 'transparent',
+                                boxShadow: selectedTime === constraint.value ? `0 0 8px ${constraint.color}` : 'none'
+                              }}
+                            />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="bg-[#0F172A] rounded-xl p-8">
+                      <div className="flex gap-8">
+                        <div className="w-1/2">
+                          <div 
+                            className={`
+                              border-2 border-dashed border-[#334155] rounded-lg aspect-square
+                              flex flex-col items-center justify-center gap-4
+                              ${dragging ? 'bg-[#334155]' : 'bg-transparent'}
+                              cursor-pointer hover:border-[#4CAF50] hover:bg-[#334155]/20 transition-all duration-300
+                            `}
+                            onDragOver={(e) => {
+                              e.preventDefault()
+                              setDragging(true)
+                            }}
+                            onDragLeave={() => setDragging(false)}
+                            onDrop={(e) => {
+                              e.preventDefault()
+                              setDragging(false)
+                            }}
+                          >
+                            <Upload className="w-8 h-8 text-[#94A3B8]" />
+                            <p className="text-[#94A3B8] text-center px-8">
+                              Drag and drop Scenario Description files here or click to browse
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="w-1/2 bg-[#1E293B]/50 rounded-lg p-6">
+                          <h3 className="text-[#94A3B8] font-medium mb-4">Scenario Analysis</h3>
+                          <div className="space-y-4">
+                            <div className="flex items-center justify-between p-3 bg-[#0F172A] rounded-lg">
+                              <div className="flex items-center gap-3">
+                                <Clock className="w-5 h-5 text-[#94A3B8]" />
+                                <span className="text-[#F8FAFC]">Current Time</span>
+                              </div>
+                              <span className="text-[#94A3B8] font-mono">
+                                {format(currentTime, 'HH:mm:ss')}
+                              </span>
+                            </div>
+
+                            <div className="flex items-center justify-between p-3 bg-[#0F172A] rounded-lg">
+                              <div className="flex items-center gap-3">
+                                <Clock className="w-5 h-5 text-[#4CAF50]" />
+                                <span className="text-[#F8FAFC]">Time Remaining</span>
+                              </div>
+                              <span className={`font-mono ${
+                                selectedTime 
+                                  ? countdown === '00:00:00' 
+                                    ? 'text-red-500' 
+                                    : 'text-[#4CAF50]'
+                                  : 'text-[#94A3B8]'
+                              }`}>
+                                {countdown}
+                              </span>
+                            </div>
+
+                            <div className="flex items-center justify-between p-3 bg-[#0F172A] rounded-lg">
+                              <div className="flex items-center gap-3">
+                                <Database className="w-5 h-5 text-[#3B82F6]" />
+                                <span className="text-[#F8FAFC]">Active Sources</span>
+                              </div>
+                              <span className="text-[#3B82F6] font-mono">{activeSources.length}/10</span>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3">
+                              <div className="flex items-center justify-between p-3 bg-[#0F172A] rounded-lg">
+                                <div className="flex items-center gap-2">
+                                  <FileText className="w-4 h-4 text-[#F59E0B]" />
+                                  <span className="text-[#94A3B8]">Docs</span>
+                                </div>
+                                  <span className="text-[#F8FAFC] font-mono">0</span>
+                              </div>
+
+                              <div className="flex items-center justify-between p-3 bg-[#0F172A] rounded-lg">
+                                <div className="flex items-center gap-2">
+                                  <Database className="w-4 h-4 text-[#EC4899]" />
+                                  <span className="text-[#94A3B8]">Available</span>
+                                </div>
+                                <span className="text-[#F8FAFC] font-mono">{additionalSources.length}</span>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                              <span className="text-white">Completion</span>
+                              <div className="flex-1 flex items-center gap-2">
+                                <div className="flex-1 h-2 bg-[#1E293B] rounded-full overflow-hidden">
+                                  <div 
+                                    className="h-full bg-[#3B82F6] transition-all duration-500"
+                                    style={{ width: `${completionPercentage}%` }}
+                                  />
+                                </div>
+                                <span className="text-white">{completionPercentage}%</span>
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -610,14 +754,12 @@ export function NewScenarioForm() {
                     </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="flex-1 bg-[#475569] rounded-xl">
-                <h2 className="text-3xl text-[#F8FAFC] font-medium p-8">INTELLIGENCE SOURCES</h2>
-                <div className="w-full px-8 pb-8">
-                  <div className="bg-[#0F172A] rounded-xl p-8">
-                    <div className="relative">
-                      <div className={`bg-[#0F172A] rounded-lg p-6 ${dragTarget === 'active' ? 'ring-2 ring-[#4CAF50]' : ''}`}
+                <div className="flex-1 bg-[#475569] rounded-xl">
+                  <h2 className="text-3xl text-[#F8FAFC] font-medium p-8">INTELLIGENCE SOURCES</h2>
+                  <div className="w-full px-8 pb-8 space-y-4">
+                    <div className="bg-[#0F172A] rounded-xl p-8">
+                      <div className={`relative ${dragTarget === 'active' ? 'ring-2 ring-[#4CAF50]' : ''}`}
                         onDragOver={(e) => handleDragOver(e, 'active')}
                         onDragLeave={handleDragLeave}
                         onDrop={(e) => handleDrop(e, 'active')}
@@ -657,83 +799,85 @@ export function NewScenarioForm() {
                         )}
                       </div>
                     </div>
-                  </div>
-                </div>
 
-                <div className="bg-[#0F172A] rounded-xl p-8 mt-8">
-                  <div className="relative">
-                    <div className={`bg-[#0F172A] rounded-lg p-6 ${dragTarget === 'additional' ? 'ring-2 ring-[#4CAF50]' : ''}`}
-                      onDragOver={(e) => handleDragOver(e, 'additional')}
-                      onDragLeave={handleDragLeave}
-                      onDrop={(e) => handleDrop(e, 'additional')}
-                    >
-                      <h3 className="text-[#94A3B8] mb-4">Additional Data Sources</h3>
-                      <div className={`grid grid-cols-2 gap-4 ${dragTarget === 'additional' ? 'opacity-50' : ''}`}>
-                        {additionalSources.map((source) => (
-                          <div 
-                            key={source.id}
-                            draggable
-                            onDragStart={(e) => handleDragStart(e, source, 'additional')}
-                            className="flex items-center gap-3 p-3 bg-[#1E293B] rounded-lg cursor-move hover:bg-[#252f43] transition-all duration-300"
-                          >
-                            <div className="p-2 rounded-full bg-[#2A3441]">
-                              {getIconComponent(source.iconType)}
+                    <div className="bg-[#0F172A] rounded-xl p-8 mx-0 mt-4">
+                      <div className={`relative ${dragTarget === 'additional' ? 'ring-2 ring-[#4CAF50]' : ''}`}
+                        onDragOver={(e) => handleDragOver(e, 'additional')}
+                        onDragLeave={handleDragLeave}
+                        onDrop={(e) => handleDrop(e, 'additional')}
+                      >
+                        <h3 className="text-[#94A3B8] mb-4">Additional Data Sources</h3>
+                        <div className={`grid grid-cols-2 gap-4 ${dragTarget === 'additional' ? 'opacity-50' : ''}`}>
+                          {additionalSources.map((source) => (
+                            <div 
+                              key={source.id}
+                              draggable
+                              onDragStart={(e) => handleDragStart(e, source, 'additional')}
+                              className="flex items-center gap-3 py-2 px-3 bg-[#1E293B] rounded-lg cursor-move hover:bg-[#252f43] transition-all duration-300"
+                            >
+                              <div className="p-1.5 rounded-full bg-[#2A3441]">
+                                {getIconComponent(source.iconType)}
+                              </div>
+                              <span className="text-[#94A3B8] text-sm">{source.name}</span>
                             </div>
-                            <span className="text-[#94A3B8]">{source.name}</span>
-                          </div>
-                        ))}
-                      </div>
-                      {dragTarget === 'additional' && (
-                        <div className="absolute inset-0 border-2 border-dashed border-[#4CAF50] rounded-lg flex items-center justify-center bg-[#1B1B35]/50">
-                          <p className="text-[#4CAF50] text-lg font-medium">Drop to Move Source</p>
+                          ))}
                         </div>
-                      )}
+                      </div>
+                      <div className="mt-8 flex justify-end">
+                        <button
+                          onClick={() => {
+                            handleIntelSourcesSet()
+                            setCompletion(prev => ({ ...prev, intelSources: true }))
+                            setSourcesSet(true)
+                          }}
+                          className={`${sourcesSet ? 'bg-green-500/80' : 'bg-blue-500/80 hover:bg-blue-600/80'}
+                            text-white py-1.5 px-3 rounded text-sm
+                            transition-all duration-300 hover:shadow-lg 
+                            ${sourcesSet ? 'hover:shadow-green-500/20' : 'hover:shadow-blue-500/20'}
+                            active:scale-95 
+                            disabled:opacity-50 disabled:cursor-not-allowed`}
+                        >
+                          {sourcesSet ? 'Sources Set' : 'Set Sources'}
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                  <div className="mt-8 flex justify-end">
-                    <button
-                      onClick={handleIntelSourcesSet}
-                      className="bg-blue-500/80 hover:bg-blue-600/80 text-white py-1.5 px-3 rounded text-sm"
-                    >
-                      Set Sources
-                    </button>
-                  </div>
-                </div>
 
-                <div className="bg-[#0F172A] rounded-xl p-8 mt-8">
-                  <div className="border-2 border-dashed border-[#334155] rounded-lg">
-                    <div className="p-8 flex flex-col items-center justify-center">
-                      <Upload className="w-8 h-8 text-[#94A3B8] mb-2" />
-                      <p className="text-[#94A3B8] text-center">
-                        Drag and drop Additional Intelligence Data here or click to browse
-                      </p>
+                    <div className="bg-[#0F172A] rounded-xl p-8 mt-4">
+                      <div className="border-2 border-dashed border-[#334155] rounded-lg">
+                        <div className="p-8 flex flex-col items-center justify-center">
+                          <Upload className="w-8 h-8 text-[#94A3B8] mb-2" />
+                          <p className="text-[#94A3B8] text-center">
+                            Drag and drop Additional Intelligence Data here or click to browse
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
+
+              <div className="w-full">
+                <TacticalMap onResourceAction={handleResourceAction} />
+              </div>
             </div>
 
-            <div className="w-full">
-              <TacticalMap onResourceAction={handleResourceAction} />
-            </div>
+            <ActionsPanel
+              scenarioCompletion={scenarioCompletion}
+              validationStatus={validationStatus}
+              isGeneratingCOAs={isGeneratingCOAs}
+              isCertifying={isCertifying}
+              onSaveDraft={handleSaveDraft}
+              onSaveTemplate={handleSaveTemplate}
+              onLoadTemplate={handleLoadTemplate}
+              onGenerateCOAs={handleGenerateCOAs}
+              onSubmitReview={handleSubmitReview}
+              onShareScenario={handleShareScenario}
+              onExportDetails={handleExportDetails}
+              onCertifyScenario={handleCertifyScenario}
+            />
           </div>
         </div>
-
-        <ActionsPanel
-          scenarioCompletion={scenarioCompletion}
-          validationStatus={validationStatus}
-          isGeneratingCOAs={isGeneratingCOAs}
-          isCertifying={isCertifying}
-          onSaveDraft={handleSaveDraft}
-          onSaveTemplate={handleSaveTemplate}
-          onLoadTemplate={handleLoadTemplate}
-          onGenerateCOAs={handleGenerateCOAs}
-          onSubmitReview={handleSubmitReview}
-          onShareScenario={handleShareScenario}
-          onExportDetails={handleExportDetails}
-          onCertifyScenario={handleCertifyScenario}
-        />
-      </div>
+      ) : null}
     </div>
   )
 }

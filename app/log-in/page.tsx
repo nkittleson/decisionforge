@@ -1,14 +1,53 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
 
 export default function LoginPage() {
   const [credentials, setCredentials] = useState({
     email: '',
     password: ''
   })
+
+  useEffect(() => {
+    const email = 'demo@vectorforge.ai'
+    const password = 'Kj#9mP$vL2nX5qR'
+    let emailIndex = 0
+    let passwordIndex = 0
+
+    // Wait 1 second before starting
+    setTimeout(() => {
+      // Type email
+      const emailTyping = setInterval(() => {
+        if (emailIndex < email.length) {
+          setCredentials(prev => ({
+            ...prev,
+            email: email.substring(0, emailIndex + 1)
+          }))
+          emailIndex++
+        } else {
+          clearInterval(emailTyping)
+          // Start typing password after email is done
+          const passwordTyping = setInterval(() => {
+            if (passwordIndex < password.length) {
+              setCredentials(prev => ({
+                ...prev,
+                password: password.substring(0, passwordIndex + 1)
+              }))
+              passwordIndex++
+            } else {
+              clearInterval(passwordTyping)
+            }
+          }, Math.random() * 100 + 50)
+        }
+      }, Math.random() * 100 + 50)
+    }, 1000)
+
+    // Cleanup function
+    return () => {
+      clearInterval()
+    }
+  }, [])
 
   return (
     <div className="min-h-screen flex flex-col items-center pt-20 bg-[#0B1221]">
@@ -32,23 +71,15 @@ export default function LoginPage() {
 
         <div className="space-y-4">
           <div className="relative">
-            <input
-              type="email"
-              placeholder="Email"
-              className="w-full p-3 rounded bg-[#0F172A]/80 text-gray-300 border-none focus:outline-none text-base"
-              value={credentials.email}
-              onChange={(e) => setCredentials(prev => ({ ...prev, email: e.target.value }))}
-            />
+            <div className="w-full p-3 rounded bg-[#0F172A]/80 text-gray-300 text-base">
+              {credentials.email || 'Email'}
+            </div>
           </div>
           
           <div className="relative">
-            <input
-              type="password"
-              placeholder="Password"
-              className="w-full p-3 rounded bg-[#0F172A]/80 text-gray-300 border-none focus:outline-none text-base"
-              value={credentials.password}
-              onChange={(e) => setCredentials(prev => ({ ...prev, password: e.target.value }))}
-            />
+            <div className="w-full p-3 rounded bg-[#0F172A]/80 text-gray-300 text-base">
+              {credentials.password ? '•'.repeat(credentials.password.length) : 'Password'}
+            </div>
           </div>
 
           <Link 

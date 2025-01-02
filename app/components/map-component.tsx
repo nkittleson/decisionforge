@@ -1,5 +1,5 @@
 'use client'
-import { MapContainer, TileLayer, ZoomControl, LayerGroup, Circle, Marker, Popup, Polyline, useMapEvents } from 'react-leaflet'
+import { MapContainer, TileLayer, ZoomControl, LayerGroup, Circle, Marker, Popup, Polyline, useMapEvents, Polygon } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
 import { useState, useRef, useEffect } from 'react'
@@ -26,9 +26,9 @@ interface MapComponentProps {
 export default function MapComponent({ onResourceAction }: MapComponentProps) {
   const [layers, setLayers] = useState({
     command: true,
-    military: true,
-    infrastructure: true,
-    intelligence: true
+    military: false,
+    infrastructure: false,
+    intelligence: false
   })
 
   const [incidents, setIncidents] = useState<{
@@ -67,189 +67,261 @@ export default function MapComponent({ onResourceAction }: MapComponentProps) {
   ]
 
   const positions = {
-    hq: {
-      position: [62.0548, -132.2644],
-      name: 'HQ Command',
-      status: 'blue'
-    },
-    heli_base_1: {
-      position: [62.1548, -132.0644],
-      units: [
-        { id: 'uh60_1', offset: [0.005, 0.005], type: 'UH-60', status: 'green' },
-        { id: 'uh60_2', offset: [-0.15, 0.1], type: 'UH-60', status: 'amber' },
-        { id: 'ah64_1', offset: [0.2, -0.15], type: 'AH-64', status: 'green' },
-        { id: 'ah64_2', offset: [-0.1, -0.2], type: 'AH-64', status: 'green' }
-      ]
-    },
-    heli_base_2: {
-      position: [61.7948, -132.6644],
-      units: [
-        { id: 'uh60_3', offset: [0.005, 0.005], type: 'UH-60', status: 'green' },
-        { id: 'uh60_4', offset: [-0.15, 0.1], type: 'UH-60', status: 'red' },
-        { id: 'ah64_3', offset: [0.2, -0.15], type: 'AH-64', status: 'amber' },
-        { id: 'ah64_4', offset: [-0.1, -0.2], type: 'AH-64', status: 'green' }
-      ]
-    },
-    infantry: [
-      {
-        id: 'inf_1',
-        position: [62.0748, -132.2644],
-        name: 'Alpha Company',
-        status: 'green',
-        strength: '120/120'
-      },
-      {
-        id: 'inf_2',
-        position: [61.9748, -132.5644],
-        name: 'Bravo Company',
-        status: 'amber',
-        strength: '115/120'
-      },
-      {
-        id: 'inf_3',
-        position: [62.0248, -132.3644],
-        name: 'Charlie Company',
-        status: 'green',
-        strength: '118/120'
-      },
-      {
-        id: 'inf_4',
-        position: [61.8748, -132.5644],
-        name: 'Delta Company',
-        status: 'green',
-        strength: '120/120'
-      }
-    ],
-    medical: [
-      {
-        id: 'med_1',
-        position: [62.0548, -132.2844],
-        name: 'Field Hospital Alpha',
-        capacity: '20/20 beds'
-      },
-      {
-        id: 'med_2',
-        position: [61.8948, -132.5644],
-        name: 'Field Hospital Bravo',
-        capacity: '20/20 beds'
-      }
-    ],
-    supply_depot: {
-      position: [61.9948, -132.3644],
-      name: 'Main Supply Depot',
-      status: 'green'
-    },
-    routes: {
-      primary: [
-        [
-          [62.1548, -132.0644],
-          [62.0748, -132.2644],
-          [61.9748, -132.4644],
-          [61.8948, -132.5644],
-          [61.7948, -132.6644]
-        ],
-        [
-          [62.0548, -131.9644],
-          [62.0448, -132.0644],
-          [62.0348, -132.1644],
-          [62.0248, -132.2644],
-          [62.0148, -132.3644],
-          [61.9948, -132.4644],
-          [61.9748, -132.5644],
-          [61.9548, -132.6644],
-          [61.9248, -132.7644]
-        ]
-      ],
-      alternate: [
-        [
-          [62.1748, -132.1644],
-          [62.1548, -132.2144],
-          [62.1348, -132.2644],
-          [62.1248, -132.2844],
-          [62.0948, -132.3144],
-          [62.0548, -132.3644],
-          [62.0248, -132.4144],
-          [61.9748, -132.4644]
-        ],
-        [
-          [61.9748, -132.4644],
-          [61.9548, -132.5144],
-          [61.9348, -132.5644],
-          [61.9148, -132.5944],
-          [61.8948, -132.6244],
-          [61.8748, -132.6644],
-          [61.8548, -132.7144],
-          [61.7748, -132.7644]
-        ]
-      ]
-    },
-    bridges: [
-      {
-        position: [62.0248, -132.3644],
-        name: 'Bridge Alpha',
-        type: 'Main Supply Route Bridge',
-        capacity: '60 tons',
-        description: 'Primary river crossing'
-      },
-      {
-        position: [61.9148, -132.5944],
-        name: 'Bridge Bravo',
-        type: 'Tactical Vehicle Bridge',
-        capacity: '40 tons',
-        description: 'Southern river crossing'
-      },
-      {
-        position: [62.1248, -132.2844],
-        name: 'Bridge Charlie',
-        type: 'Light Vehicle Bridge',
-        capacity: '20 tons',
-        description: 'Mountain pass crossing'
-      }
-    ],
-    airfields: [
-      {
-        position: [62.0548, -132.1644],
-        name: 'Airfield Alpha',
-        size: 'Medium',
-        surface: 'Paved',
-        fuel: true,
-        description: 'Main support airfield'
-      },
-      {
-        position: [61.8448, -132.5644],
-        name: 'Airfield Bravo',
-        size: 'Small',
-        surface: 'Gravel',
-        fuel: false,
-        description: 'Forward support strip'
-      }
-    ],
-    hlz: [
-      {
+    command: {
+      main_cp: {
+        id: 'cp_main',
         position: [62.0548, -132.2644],
-        name: 'HLZ Alpha',
-        size: 'Platoon',
-        description: 'Northern valley support'
+        name: 'Main Command Post',
+        status: 'operational'
+      },
+      aux_cp: [
+        {
+          id: 'cp_aux_1',
+          position: [62.2548, -132.0644], // ~25km NE
+          name: 'Auxiliary Command Post Alpha',
+          status: 'operational'
+        },
+        {
+          id: 'cp_aux_2',
+          position: [61.8548, -132.4644], // ~25km SW
+          name: 'Auxiliary Command Post Bravo',
+          status: 'operational'
+        }
+      ]
+    },
+    helicopters: [
+      {
+        id: 'ah64_1',
+        position: [62.1548, -132.1644],
+        type: 'AH-64',
+        status: 'green',
+        role: 'Attack'
       },
       {
-        position: [61.9748, -132.4644],
-        name: 'HLZ Bravo',
-        size: 'Company',
-        description: 'Central command support'
+        id: 'ah64_2',
+        position: [61.9548, -132.3644],
+        type: 'AH-64',
+        status: 'green',
+        role: 'Attack'
       },
       {
-        position: [61.9348, -132.5644],
-        name: 'HLZ Charlie',
-        size: 'Squad',
-        description: 'Southern QRF support'
+        id: 'ah64_3',
+        position: [62.0548, -132.4644],
+        type: 'AH-64',
+        status: 'green',
+        role: 'Attack'
       },
       {
-        position: [61.8748, -132.6644],
-        name: 'HLZ Delta',
-        size: 'Platoon',
-        description: 'Southern valley support'
+        id: 'ah64_4',
+        position: [61.8548, -132.2644],
+        type: 'AH-64',
+        status: 'amber',
+        role: 'Attack'
+      },
+      {
+        id: 'uh60_1',
+        position: [62.2048, -132.2644],
+        type: 'UH-60',
+        status: 'green',
+        role: 'Transport'
+      },
+      {
+        id: 'uh60_2',
+        position: [61.9048, -132.1644],
+        type: 'UH-60',
+        status: 'green',
+        role: 'Transport'
+      },
+      {
+        id: 'uh60_3',
+        position: [62.1048, -132.3644],
+        type: 'UH-60',
+        status: 'green',
+        role: 'Transport'
+      },
+      {
+        id: 'uh60_4',
+        position: [61.8048, -132.4644],
+        type: 'UH-60',
+        status: 'amber',
+        role: 'Transport'
+      },
+      {
+        id: 'ch47_1',
+        position: [62.0048, -132.1644],
+        type: 'CH-47',
+        status: 'green',
+        role: 'Heavy Transport'
+      },
+      {
+        id: 'ch47_2',
+        position: [61.9548, -132.5644],
+        type: 'CH-47',
+        status: 'green',
+        role: 'Heavy Transport'
       }
-    ]
+    ],
+    infrastructure: {
+      power: {
+        main_station: {
+          id: 'power_main',
+          position: [62.0548, -132.4644],
+          name: 'Main Power Generation Station',
+          status: 'operational'
+        },
+        substations: [
+          {
+            id: 'sub_1',
+            position: [62.1248, -132.3644],
+            name: 'Substation Alpha',
+            status: 'operational'
+          },
+          {
+            id: 'sub_2',
+            position: [61.9848, -132.5644],
+            name: 'Substation Bravo',
+            status: 'operational'
+          },
+          {
+            id: 'sub_3',
+            position: [62.0748, -132.2644],
+            name: 'Substation Charlie',
+            status: 'operational'
+          },
+          {
+            id: 'sub_4',
+            position: [61.8948, -132.4644],
+            name: 'Substation Delta',
+            status: 'operational'
+          }
+        ],
+        dam: {
+          id: 'hydro_1',
+          position: [62.0048, -132.3644],
+          name: 'Hydroelectric Dam',
+          status: 'operational'
+        },
+        windfarm: {
+          id: 'wind_1',
+          position: [62.1548, -132.1644],
+          name: 'Wind Farm Alpha',
+          status: 'operational',
+          area: [
+            [62.1648, -132.1744],
+            [62.1648, -132.1544],
+            [62.1448, -132.1544],
+            [62.1448, -132.1744]
+          ]
+        }
+      },
+      comms: [
+        {
+          id: 'comm_1',
+          position: [62.0748, -132.2644],
+          name: 'Communications Hub Alpha',
+          status: 'operational'
+        },
+        {
+          id: 'comm_2',
+          position: [61.9548, -132.4644],
+          name: 'Communications Hub Bravo',
+          status: 'operational'
+        },
+        {
+          id: 'comm_3',
+          position: [62.1248, -132.2644],
+          name: 'Communications Hub Charlie',
+          status: 'operational'
+        }
+      ]
+    },
+    intelligence: {
+      sensors: [
+        {
+          id: 'sensor_1',
+          position: [62.1548, -132.1644],
+          name: 'Collection Sensor Alpha',
+          type: 'SIGINT/EW',
+          status: 'active'
+        },
+        {
+          id: 'sensor_2',
+          position: [61.9548, -132.3644],
+          name: 'Collection Sensor Bravo',
+          type: 'SIGINT/EW',
+          status: 'active'
+        },
+        {
+          id: 'sensor_3',
+          position: [62.0748, -132.4644],
+          name: 'Collection Sensor Charlie',
+          type: 'ELINT',
+          status: 'active'
+        },
+        {
+          id: 'sensor_4',
+          position: [61.8948, -132.2644],
+          name: 'Collection Sensor Delta',
+          type: 'ELINT',
+          status: 'active'
+        },
+        {
+          id: 'sensor_5',
+          position: [62.1248, -132.3644],
+          name: 'Collection Sensor Echo',
+          type: 'SIGINT/EW',
+          status: 'active'
+        },
+        {
+          id: 'sensor_6',
+          position: [61.9248, -132.1644],
+          name: 'Collection Sensor Foxtrot',
+          type: 'ELINT',
+          status: 'active'
+        },
+        {
+          id: 'sensor_7',
+          position: [62.0548, -132.2644],
+          name: 'Collection Sensor Golf',
+          type: 'SIGINT/EW',
+          status: 'active'
+        },
+        {
+          id: 'sensor_8',
+          position: [61.8548, -132.4644],
+          name: 'Collection Sensor Hotel',
+          type: 'ELINT',
+          status: 'active'
+        },
+        {
+          id: 'sensor_9',
+          position: [62.1048, -132.2644],
+          name: 'Collection Sensor India',
+          type: 'SIGINT/EW',
+          status: 'active'
+        },
+        {
+          id: 'sensor_10',
+          position: [61.9748, -132.5644],
+          name: 'Collection Sensor Juliet',
+          type: 'ELINT',
+          status: 'active'
+        }
+      ],
+      network_connections: [
+        // Connect each sensor to nearest command post
+        { from: [62.1548, -132.1644], to: [62.0548, -132.2644] }, // Sensor 1 to Main CP
+        { from: [61.9548, -132.3644], to: [62.0548, -132.2644] }, // Sensor 2 to Main CP
+        { from: [62.0748, -132.4644], to: [61.8548, -132.4644] }, // Sensor 3 to Aux CP 2
+        { from: [61.8948, -132.2644], to: [62.2548, -132.0644] }, // Sensor 4 to Aux CP 1
+        { from: [62.1248, -132.3644], to: [62.0548, -132.2644] }, // Sensor 5 to Main CP
+        { from: [61.9248, -132.1644], to: [62.2548, -132.0644] }, // Sensor 6 to Aux CP 1
+        { from: [62.0548, -132.2644], to: [62.0548, -132.2644] }, // Sensor 7 to Main CP
+        { from: [61.8548, -132.4644], to: [61.8548, -132.4644] }, // Sensor 8 to Aux CP 2
+        { from: [62.1048, -132.2644], to: [62.0548, -132.2644] }, // Sensor 9 to Main CP
+        { from: [61.9748, -132.5644], to: [61.8548, -132.4644] }  // Sensor 10 to Aux CP 2
+      ]
+    }
   }
 
   const handleMapClick = (e: L.LeafletMouseEvent) => {
@@ -286,10 +358,11 @@ export default function MapComponent({ onResourceAction }: MapComponentProps) {
     }
 
     return L.divIcon({
-      html: `<div class="w-6 h-6 rounded-lg bg-${status}-500 border-2 border-white flex items-center justify-center text-white font-bold">${symbols[type] || '●'}</div>`,
-      className: '',
-      iconSize: [24, 24],
-      iconAnchor: [12, 12]
+      html: `<div class="w-8 h-8 rounded-lg bg-${status}-500 border-2 border-white flex items-center justify-center text-white font-bold">${symbols[type] || '●'}</div>`,
+      className: 'cursor-pointer',
+      iconSize: [32, 32],
+      iconAnchor: [16, 16],
+      popupAnchor: [0, -16]
     })
   }
 
@@ -307,18 +380,23 @@ export default function MapComponent({ onResourceAction }: MapComponentProps) {
     setAssignedResources(prev => prev.filter(resource => resource.id !== id))
   }
 
-  // Add state for primary actions
+  // Keep these state declarations separate
   const [scenarioCompletion, setScenarioCompletion] = useState(0)
-  const [validationStatus, setValidationStatus] = useState<'valid' | 'invalid' | 'pending'>('pending')
+  const [validationStatus, setValidationStatus] = useState<'pending' | 'valid' | 'invalid'>('pending')
   const [isGeneratingCOAs, setIsGeneratingCOAs] = useState(false)
 
-  // Add this effect right after those state declarations:
+  // Keep this effect for completion only
   useEffect(() => {
-    // Calculate completion based on assigned resources
-    // Let's say we need at least 5 resources for 100%
     const completion = Math.min(Math.round((assignedResources.length / 5) * 100), 100)
     setScenarioCompletion(completion)
+    // Remove any validation status changes from here
   }, [assignedResources])
+
+  // Separate handler for certification
+  const handleCertifyScenario = () => {
+    // Only change validation status when button is clicked
+    setValidationStatus('valid')
+  }
 
   // Add handlers for primary actions
   const handleSaveDraft = () => {
@@ -383,7 +461,7 @@ export default function MapComponent({ onResourceAction }: MapComponentProps) {
         <div className="absolute top-4 right-4 z-[1000] bg-[#1E293B] rounded-lg p-4 shadow-lg">
           <h3 className="text-[#F8FAFC] font-medium mb-3">Layer Control</h3>
           <div className="space-y-2">
-            <label className="flex items-center space-x-2 text-[#F8FAFC]">
+            <label className="flex items-center space-x-2 text-[#F8FAFC] cursor-pointer">
               <input
                 type="checkbox"
                 checked={layers.command}
@@ -392,7 +470,7 @@ export default function MapComponent({ onResourceAction }: MapComponentProps) {
               />
               <span>Command</span>
             </label>
-            <label className="flex items-center space-x-2 text-[#F8FAFC]">
+            <label className="flex items-center space-x-2 text-[#F8FAFC] cursor-pointer">
               <input
                 type="checkbox"
                 checked={layers.military}
@@ -401,7 +479,7 @@ export default function MapComponent({ onResourceAction }: MapComponentProps) {
               />
               <span>Military</span>
             </label>
-            <label className="flex items-center space-x-2 text-[#F8FAFC]">
+            <label className="flex items-center space-x-2 text-[#F8FAFC] cursor-pointer">
               <input
                 type="checkbox"
                 checked={layers.infrastructure}
@@ -410,7 +488,7 @@ export default function MapComponent({ onResourceAction }: MapComponentProps) {
               />
               <span>Infrastructure</span>
             </label>
-            <label className="flex items-center space-x-2 text-[#F8FAFC]">
+            <label className="flex items-center space-x-2 text-[#F8FAFC] cursor-pointer">
               <input
                 type="checkbox"
                 checked={layers.intelligence}
@@ -498,19 +576,16 @@ export default function MapComponent({ onResourceAction }: MapComponentProps) {
           {/* Command Layer */}
           {layers.command && (
             <LayerGroup>
+              {/* Main CP */}
               <Marker
-                position={positions.hq.position as L.LatLngExpression}
-                icon={createMilitaryMarker('hq', positions.hq.status)}
+                position={positions.command.main_cp.position}
+                icon={createMilitaryMarker('hq', 'blue')}
               >
                 <Popup>
                   <div>
-                    <h3 className="text-lg mb-2">{positions.hq.name}</h3>
-                    <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-                      <span>Command Status: Active</span>
-                    </div>
+                    <h3 className="text-lg mb-2">{positions.command.main_cp.name}</h3>
                     <button 
-                      onClick={() => handleAddToScenario('command', 'hq', positions.hq.name, 'blue')}
+                      onClick={() => handleAddToScenario('command', positions.command.main_cp.id, positions.command.main_cp.name, 'blue')}
                       className="w-full bg-blue-600 text-white py-2 rounded mt-2"
                     >
                       Add to Scenario
@@ -518,144 +593,86 @@ export default function MapComponent({ onResourceAction }: MapComponentProps) {
                   </div>
                 </Popup>
               </Marker>
+
+              {/* Aux CPs */}
+              {positions.command.aux_cp.map(cp => (
+                <Marker
+                  key={cp.id}
+                  position={cp.position}
+                  icon={createMilitaryMarker('hq', 'blue')}
+                >
+                  <Popup>
+                    <div>
+                      <h3 className="text-lg mb-2">{cp.name}</h3>
+                      <button 
+                        onClick={() => handleAddToScenario('command', cp.id, cp.name, 'blue')}
+                        className="w-full bg-blue-600 text-white py-2 rounded mt-2"
+                      >
+                        Add to Scenario
+                      </button>
+                    </div>
+                  </Popup>
+                </Marker>
+              ))}
             </LayerGroup>
           )}
 
           {/* Military Layer */}
           {layers.military && (
             <LayerGroup>
-              {/* Helicopter Base 1 */}
-              {positions.heli_base_1.units.map((unit) => (
-                <Marker
-                  key={unit.id}
-                  position={[
-                    positions.heli_base_1.position[0] + unit.offset[0],
-                    positions.heli_base_1.position[1] + unit.offset[1]
-                  ] as L.LatLngExpression}
-                  icon={createMilitaryMarker('air', unit.status)}
-                >
-                  <Popup>
-                    <div>
-                      <h3 className="text-lg mb-2">{unit.type}</h3>
-                      <div className="flex items-center gap-2">
-                        <span className={`w-2 h-2 rounded-full bg-${unit.status}-500`}></span>
-                        <span>Status: {unit.status.toUpperCase()}</span>
+              {/* Add helicopters with range circles */}
+              {positions.helicopters.map(heli => (
+                <LayerGroup key={heli.id}>
+                  <Marker
+                    position={heli.position}
+                    icon={createMilitaryMarker('air', heli.status)}
+                  >
+                    <Popup>
+                      <div>
+                        <h3 className="text-lg mb-2">{heli.type}</h3>
+                        <div className="text-sm">Role: {heli.role}</div>
+                        <button 
+                          onClick={() => handleAddToScenario('military', heli.id, `${heli.type} (${heli.role})`, heli.status)}
+                          className="w-full bg-blue-600 text-white py-2 rounded mt-2"
+                        >
+                          Add to Scenario
+                        </button>
                       </div>
-                      <button 
-                        onClick={() => handleAddToScenario('military', unit.id, unit.type, unit.status)}
-                        className="w-full bg-blue-600 text-white py-2 rounded mt-2"
-                      >
-                        Add to Scenario
-                      </button>
-                    </div>
-                  </Popup>
-                </Marker>
+                    </Popup>
+                  </Marker>
+                  <Circle
+                    center={heli.position}
+                    radius={10000}
+                    pathOptions={{ 
+                      color: heli.role === 'Attack' ? '#DC2626' : '#3B82F6',
+                      weight: 1,
+                      dashArray: '5,10',
+                      fillOpacity: 0
+                    }}
+                  />
+                </LayerGroup>
               ))}
+            </LayerGroup>
+          )}
 
-              {/* Helicopter Base 2 */}
-              {positions.heli_base_2.units.map((unit) => (
-                <Marker
-                  key={unit.id}
-                  position={[
-                    positions.heli_base_2.position[0] + unit.offset[0],
-                    positions.heli_base_2.position[1] + unit.offset[1]
-                  ] as L.LatLngExpression}
-                  icon={createMilitaryMarker('air', unit.status)}
-                >
-                  <Popup>
-                    <div>
-                      <h3 className="text-lg mb-2">{unit.type}</h3>
-                      <div className="flex items-center gap-2">
-                        <span className={`w-2 h-2 rounded-full bg-${unit.status}-500`}></span>
-                        <span>Status: {unit.status.toUpperCase()}</span>
-                      </div>
-                      <button 
-                        onClick={() => handleAddToScenario('military', unit.id, unit.type, unit.status)}
-                        className="w-full bg-blue-600 text-white py-2 rounded mt-2"
-                      >
-                        Add to Scenario
-                      </button>
-                    </div>
-                  </Popup>
-                </Marker>
-              ))}
-
-              {/* Infantry Units */}
-              {positions.infantry.map((unit) => (
-                <Marker
-                  key={unit.id}
-                  position={unit.position as L.LatLngExpression}
-                  icon={createMilitaryMarker('infantry', unit.status)}
-                >
-                  <Popup>
-                    <div>
-                      <h3 className="text-lg mb-2">{unit.name}</h3>
-                      <div className="space-y-1">
-                        <div className="flex justify-between">
-                          <span>Strength:</span>
-                          <span>{unit.strength}</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2 mt-2">
-                        <span className={`w-2 h-2 rounded-full bg-${unit.status}-500`}></span>
-                        <span>Status: {unit.status.toUpperCase()}</span>
-                      </div>
-                      <button 
-                        onClick={() => handleAddToScenario('military', unit.id, unit.name, unit.status)}
-                        className="w-full bg-blue-600 text-white py-2 rounded mt-2"
-                      >
-                        Add to Scenario
-                      </button>
-                    </div>
-                  </Popup>
-                </Marker>
-              ))}
-
-              {/* Medical Facilities */}
-              {positions.medical.map((facility) => (
-                <Marker
-                  key={facility.id}
-                  position={facility.position as L.LatLngExpression}
-                  icon={createMilitaryMarker('medical', 'green')}
-                >
-                  <Popup>
-                    <div>
-                      <h3 className="text-lg mb-2">{facility.name}</h3>
-                      <div className="space-y-1">
-                        <div className="flex justify-between">
-                          <span>Capacity:</span>
-                          <span>{facility.capacity}</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2 mt-2">
-                        <span className="w-2 h-2 rounded-full bg-green-500"></span>
-                        <span>Status: Operational</span>
-                      </div>
-                      <button 
-                        onClick={() => handleAddToScenario('military', facility.id, facility.name, 'green')}
-                        className="w-full bg-blue-600 text-white py-2 rounded mt-2"
-                      >
-                        Add to Scenario
-                      </button>
-                    </div>
-                  </Popup>
-                </Marker>
-              ))}
-
-              {/* Supply Depot */}
+          {/* Infrastructure Layer */}
+          {layers.infrastructure && (
+            <LayerGroup>
+              {/* Power Infrastructure */}
               <Marker
-                position={positions.supply_depot.position as L.LatLngExpression}
-                icon={createMilitaryMarker('supply', 'green')}
+                position={positions.infrastructure.power.main_station.position}
+                icon={L.divIcon({
+                  html: `<div class="w-6 h-6 flex items-center justify-center bg-yellow-500 border-2 border-white text-white font-bold">⚡</div>`,
+                  className: '',
+                  iconSize: [24, 24],
+                  iconAnchor: [12, 12]
+                })}
               >
                 <Popup>
                   <div>
-                    <h3 className="text-lg mb-2">{positions.supply_depot.name}</h3>
-                    <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-green-500"></span>
-                      <span>Status: Fully Stocked</span>
-                    </div>
+                    <h3 className="text-lg mb-2">{positions.infrastructure.power.main_station.name}</h3>
                     <button 
-                      onClick={() => handleAddToScenario('military', 'supply_depot', positions.supply_depot.name, 'green')}
+                      onClick={() => handleAddToScenario('infrastructure', 'power_main', positions.infrastructure.power.main_station.name, 'yellow')}
                       className="w-full bg-blue-600 text-white py-2 rounded mt-2"
                     >
                       Add to Scenario
@@ -663,152 +680,155 @@ export default function MapComponent({ onResourceAction }: MapComponentProps) {
                   </div>
                 </Popup>
               </Marker>
+
+              {/* Substations */}
+              {positions.infrastructure.power.substations.map(sub => (
+                <Marker
+                  key={sub.id}
+                  position={sub.position}
+                  icon={L.divIcon({
+                    html: `<div class="w-6 h-6 flex items-center justify-center bg-yellow-500 border-2 border-white text-white font-bold">⚡</div>`,
+                    className: '',
+                    iconSize: [24, 24],
+                    iconAnchor: [12, 12]
+                  })}
+                >
+                  <Popup>
+                    <div>
+                      <h3 className="text-lg mb-2">{sub.name}</h3>
+                      <button 
+                        onClick={() => handleAddToScenario('infrastructure', sub.id, sub.name, 'yellow')}
+                        className="w-full bg-blue-600 text-white py-2 rounded mt-2"
+                      >
+                        Add to Scenario
+                      </button>
+                    </div>
+                  </Popup>
+                </Marker>
+              ))}
+
+              {/* Dam */}
+              <Marker
+                position={positions.infrastructure.power.dam.position}
+                icon={L.divIcon({
+                  html: `<div class="w-6 h-6 flex items-center justify-center bg-blue-500 border-2 border-white text-white font-bold">🏊</div>`,
+                  className: '',
+                  iconSize: [24, 24],
+                  iconAnchor: [12, 12]
+                })}
+              >
+                <Popup>
+                  <div>
+                    <h3 className="text-lg mb-2">{positions.infrastructure.power.dam.name}</h3>
+                    <button 
+                      onClick={() => handleAddToScenario('infrastructure', 'dam', positions.infrastructure.power.dam.name, 'blue')}
+                      className="w-full bg-blue-600 text-white py-2 rounded mt-2"
+                    >
+                      Add to Scenario
+                    </button>
+                  </div>
+                </Popup>
+              </Marker>
+
+              {/* Wind Farm */}
+              <Polygon
+                positions={positions.infrastructure.power.windfarm.area as L.LatLngExpression[]}
+                pathOptions={{ color: '#22C55E', fillOpacity: 0.2 }}
+              >
+                <Popup>
+                  <div>
+                    <h3 className="text-lg mb-2">{positions.infrastructure.power.windfarm.name}</h3>
+                    <button 
+                      onClick={() => handleAddToScenario('infrastructure', 'windfarm', positions.infrastructure.power.windfarm.name, 'green')}
+                      className="w-full bg-blue-600 text-white py-2 rounded mt-2"
+                    >
+                      Add to Scenario
+                    </button>
+                  </div>
+                </Popup>
+              </Polygon>
+
+              {/* Communication Hubs */}
+              {positions.infrastructure.comms.map(hub => (
+                <Marker
+                  key={hub.id}
+                  position={hub.position}
+                  icon={L.divIcon({
+                    html: `<div class="w-6 h-6 flex items-center justify-center bg-purple-500 border-2 border-white text-white font-bold">📡</div>`,
+                    className: '',
+                    iconSize: [24, 24],
+                    iconAnchor: [12, 12]
+                  })}
+                >
+                  <Popup>
+                    <div>
+                      <h3 className="text-lg mb-2">{hub.name}</h3>
+                      <button 
+                        onClick={() => handleAddToScenario('infrastructure', hub.id, hub.name, 'purple')}
+                        className="w-full bg-blue-600 text-white py-2 rounded mt-2"
+                      >
+                        Add to Scenario
+                      </button>
+                    </div>
+                  </Popup>
+                </Marker>
+              ))}
             </LayerGroup>
           )}
 
-          {/* Infrastructure Layer */}
-          {layers.infrastructure && (
+          {/* Intelligence Layer */}
+          {layers.intelligence && (
             <LayerGroup>
-              {/* Primary Routes */}
-              {positions.routes.primary.map((route, index) => (
+              {/* Sensors */}
+              {positions.intelligence.sensors.map((sensor) => (
+                <LayerGroup key={sensor.id}>
+                  <Marker
+                    position={sensor.position as L.LatLngExpression}
+                    icon={L.divIcon({
+                      html: `<div class="w-8 h-8 flex items-center justify-center bg-emerald-500 border-2 border-white text-white font-bold">S</div>`,
+                      className: 'cursor-pointer',
+                      iconSize: [32, 32],
+                      iconAnchor: [16, 16],
+                      popupAnchor: [0, -16]
+                    })}
+                  >
+                    <Popup>
+                      <div>
+                        <h3 className="text-lg mb-2">{sensor.name}</h3>
+                        <div className="space-y-1">
+                          <div className="flex justify-between">
+                            <span>Type:</span>
+                            <span>{sensor.type}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Status:</span>
+                            <span className="text-green-500">{sensor.status}</span>
+                          </div>
+                        </div>
+                        <button 
+                          onClick={() => handleAddToScenario('intelligence', sensor.id, sensor.name, 'emerald')}
+                          className="w-full bg-blue-600 text-white py-2 rounded mt-2"
+                        >
+                          Add to Scenario
+                        </button>
+                      </div>
+                    </Popup>
+                  </Marker>
+                </LayerGroup>
+              ))}
+
+              {/* Network Connections */}
+              {positions.intelligence.network_connections.map((connection, index) => (
                 <Polyline
-                  key={`primary_${index}`}
-                  positions={route as L.LatLngExpression[]}
-                  pathOptions={{ color: '#3b82f6', weight: 4 }}
+                  key={`connection_${index}`}
+                  positions={[connection.from, connection.to] as L.LatLngExpression[]}
+                  pathOptions={{ 
+                    color: '#10B981',
+                    weight: 1,
+                    dashArray: '5,10',
+                    opacity: 0.6
+                  }}
                 />
-              ))}
-
-              {/* Alternate Routes */}
-              {positions.routes.alternate.map((route, index) => (
-                <Polyline
-                  key={`alternate_${index}`}
-                  positions={route as L.LatLngExpression[]}
-                  pathOptions={{ color: '#64748b', weight: 3, dashArray: '5, 10' }}
-                />
-              ))}
-
-              {/* Bridges */}
-              {positions.bridges.map((bridge) => (
-                <Marker
-                  key={bridge.name}
-                  position={bridge.position as L.LatLngExpression}
-                  icon={L.divIcon({
-                    html: `<div class="w-6 h-6 flex items-center justify-center bg-orange-500 border-2 border-white text-white font-bold">═</div>`,
-                    className: '',
-                    iconSize: [24, 24],
-                    iconAnchor: [12, 12]
-                  })}
-                >
-                  <Popup>
-                    <div>
-                      <h3 className="text-lg mb-2">{bridge.name}</h3>
-                      <div className="space-y-1">
-                        <div className="flex justify-between">
-                          <span>Type:</span>
-                          <span>{bridge.type}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Capacity:</span>
-                          <span>{bridge.capacity}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Role:</span>
-                          <span>{bridge.description}</span>
-                        </div>
-                      </div>
-                      <button 
-                        onClick={() => handleAddToScenario('infrastructure', bridge.name.toLowerCase(), bridge.name, 'orange')}
-                        className="w-full bg-blue-600 text-white py-2 rounded mt-2"
-                      >
-                        Add to Scenario
-                      </button>
-                    </div>
-                  </Popup>
-                </Marker>
-              ))}
-
-              {/* Airfields */}
-              {positions.airfields.map((airfield) => (
-                <Marker
-                  key={airfield.name}
-                  position={airfield.position as L.LatLngExpression}
-                  icon={L.divIcon({
-                    html: `<div class="w-6 h-6 flex items-center justify-center bg-purple-500 border-2 border-white text-white font-bold">✈</div>`,
-                    className: '',
-                    iconSize: [24, 24],
-                    iconAnchor: [12, 12]
-                  })}
-                >
-                  <Popup>
-                    <div>
-                      <h3 className="text-lg mb-2">{airfield.name}</h3>
-                      <div className="space-y-1">
-                        <div className="flex justify-between">
-                          <span>Size:</span>
-                          <span>{airfield.size}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Surface:</span>
-                          <span>{airfield.surface}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Fuel:</span>
-                          <span>{airfield.fuel ? 'Available' : 'Not Available'}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Role:</span>
-                          <span>{airfield.description}</span>
-                        </div>
-                      </div>
-                      <button 
-                        onClick={() => handleAddToScenario('infrastructure', airfield.name.toLowerCase(), airfield.name, 'purple')}
-                        className="w-full bg-blue-600 text-white py-2 rounded mt-2"
-                      >
-                        Add to Scenario
-                      </button>
-                    </div>
-                  </Popup>
-                </Marker>
-              ))}
-
-              {/* HLZs */}
-              {positions.hlz.map((hlz) => (
-                <Marker
-                  key={hlz.name}
-                  position={hlz.position as L.LatLngExpression}
-                  icon={L.divIcon({
-                    html: `<div class="w-6 h-6 flex items-center justify-center bg-green-500 border-2 border-white text-white font-bold">H</div>`,
-                    className: '',
-                    iconSize: [24, 24],
-                    iconAnchor: [12, 12]
-                  })}
-                >
-                  <Popup>
-                    <div>
-                      <h3 className="text-lg mb-2">{hlz.name}</h3>
-                      <div className="space-y-1">
-                        <div className="flex justify-between">
-                          <span>Type:</span>
-                          <span>Landing Zone</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Capacity:</span>
-                          <span>{hlz.size}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Role:</span>
-                          <span>{hlz.description}</span>
-                        </div>
-                      </div>
-                      <button 
-                        onClick={() => handleAddToScenario('infrastructure', hlz.name.toLowerCase(), hlz.name, 'green')}
-                        className="w-full bg-blue-600 text-white py-2 rounded mt-2"
-                      >
-                        Add to Scenario
-                      </button>
-                    </div>
-                  </Popup>
-                </Marker>
               ))}
             </LayerGroup>
           )}

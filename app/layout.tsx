@@ -9,7 +9,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="min-h-screen bg-[#1B1B35]">
-        <header className="border-b border-[#334155] bg-[#1E293B]">
+        <header className="fixed top-0 left-0 right-0 z-50 border-b border-[#334155] bg-[#1E293B]">
           <div className="w-screen px-8 py-3">
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-3">
@@ -36,7 +36,7 @@ export default function RootLayout({
           </div>
         </header>
 
-        <main>
+        <main className="pt-[72px]">
           <div className="w-screen px-8 py-8">
             {children}
           </div>
