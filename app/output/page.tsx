@@ -4,10 +4,10 @@ import React, { useState, useEffect } from 'react'
 import { 
   Shield, Clock, AlertTriangle, Building2, Signal, Users, 
   Thermometer, Cloud, Sun, Wind, Eye, ArrowUp, ArrowDown,
-  MapPin, Activity, Check, FileText, CheckCircle
+  MapPin, Activity, Check, FileText, CheckCircle, Loader2
 } from 'lucide-react'
 import COACard from '../components/COACard'
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface FacilityStatus {
   name: string;
@@ -452,8 +452,125 @@ const coaData = [
   // Add COA 2 and 3 with similar structure but different values
 ];
 
+// Add this new component
+function COABuildModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+  const [buildStep, setBuildStep] = useState(0)
+  const [showSuccess, setShowSuccess] = useState(false)
+  
+  useEffect(() => {
+    if (isOpen) {
+      const timer = setTimeout(() => setBuildStep(1), 800)    
+      const timer2 = setTimeout(() => setBuildStep(2), 1600)   
+      const timer3 = setTimeout(() => setBuildStep(3), 2400)   
+      
+      return () => {
+        clearTimeout(timer)
+        clearTimeout(timer2)
+        clearTimeout(timer3)
+      }
+    }
+  }, [isOpen])
+
+  const handleDownload = () => {
+    setShowSuccess(true)
+    setTimeout(() => {
+      onClose()
+    }, 1500)
+  }
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50"
+        >
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.9, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="bg-[#1E293B] rounded-xl p-8 w-[400px] shadow-xl"
+          >
+            <div className="space-y-6">
+              <h3 className="text-xl text-[#F8FAFC] font-medium text-center">
+                {showSuccess ? 'Package Downloaded!' : buildStep === 3 ? 'COA Package Ready' : 'Building COA Package'}
+              </h3>
+              
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  {buildStep > 0 ? (
+                    <CheckCircle className="w-5 h-5 text-green-400" />
+                  ) : (
+                    <Loader2 className="w-5 h-5 text-blue-400 animate-spin" />
+                  )}
+                  <span className="text-[#94A3B8]">Compiling Intelligence</span>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  {buildStep > 1 ? (
+                    <CheckCircle className="w-5 h-5 text-green-400" />
+                  ) : buildStep >= 1 ? (
+                    <Loader2 className="w-5 h-5 text-blue-400 animate-spin" />
+                  ) : (
+                    <div className="w-5 h-5" />
+                  )}
+                  <span className="text-[#94A3B8]">Generating Action Items</span>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  {buildStep > 2 ? (
+                    <CheckCircle className="w-5 h-5 text-green-400" />
+                  ) : buildStep >= 2 ? (
+                    <Loader2 className="w-5 h-5 text-blue-400 animate-spin" />
+                  ) : (
+                    <div className="w-5 h-5" />
+                  )}
+                  <span className="text-[#94A3B8]">Finalizing Package</span>
+                </div>
+              </div>
+
+              {buildStep === 3 && !showSuccess && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="space-y-6 pt-4"
+                >
+                  <FileText className="w-16 h-16 text-green-400 mx-auto" />
+                  <div className="flex flex-col items-center gap-4">
+                    <button
+                      onClick={handleDownload}
+                      className="bg-green-500 hover:bg-green-600 text-white px-8 py-3 rounded-lg 
+                        transition-colors duration-200 text-center w-full"
+                    >
+                      Download COA Package
+                    </button>
+                    <button
+                      onClick={onClose}
+                      className="text-[#94A3B8] hover:text-white text-sm"
+                    >
+                      Close Window
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  )
+}
+
 export default function OutputPage() {
-  const [selectedCOA, setSelectedCOA] = useState<number | null>(null);
+  const [selectedCOA, setSelectedCOA] = useState<number | null>(null)
+  const [showBuildModal, setShowBuildModal] = useState(false)
+
+  const handleExecuteCOA = () => {
+    setShowBuildModal(true)
+  }
 
   return (
     <div suppressHydrationWarning className="min-h-screen bg-[#0F172A]">
@@ -552,17 +669,36 @@ export default function OutputPage() {
             {[0, 1, 2].map((index) => (
               <div 
                 key={index}
-                onClick={() => setSelectedCOA(index)}
                 className={`transition-all duration-300 ${
                   selectedCOA === index ? 'ring-2 ring-blue-500 scale-[1.01]' : ''
                 }`}
               >
-                <COACard coaIndex={index} />
+                <div onClick={() => setSelectedCOA(index)}>
+                  <COACard coaIndex={index} />
+                </div>
+                {selectedCOA === index && (
+                  <div className="mt-4 flex justify-end px-8 pb-4">
+                    <button
+                      onClick={() => setShowBuildModal(true)}
+                      className="bg-[#3B82F6] hover:bg-[#2563EB] text-white px-6 py-2 rounded-lg 
+                        transition-colors duration-200 flex items-center gap-2"
+                    >
+                      Execute COA
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
           </div>
         </motion.div>
       </motion.div>
+      
+      {showBuildModal && (
+        <COABuildModal 
+          isOpen={showBuildModal} 
+          onClose={() => setShowBuildModal(false)} 
+        />
+      )}
     </div>
   );
 }
