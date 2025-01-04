@@ -1,5 +1,6 @@
-'use client'
+"use client"
 
+import dynamic from 'next/dynamic'
 import React, { useState, useEffect } from 'react'
 import { 
   Shield, Clock, AlertTriangle, Building2, Signal, Users, 
@@ -452,7 +453,12 @@ const coaData = [
   // Add COA 2 and 3 with similar structure but different values
 ];
 
-// Add this new component
+// Wrap just the modal component with dynamic import
+const DynamicCOABuildModal = dynamic(
+  () => Promise.resolve(COABuildModal),
+  { ssr: false }
+)
+
 function COABuildModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const [buildStep, setBuildStep] = useState(0)
   const [showSuccess, setShowSuccess] = useState(false)
@@ -482,20 +488,22 @@ function COABuildModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
     <AnimatePresence>
       {isOpen && (
         <motion.div
+          suppressHydrationWarning
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50"
         >
           <motion.div
+            suppressHydrationWarning
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.9, opacity: 0 }}
             transition={{ duration: 0.2 }}
             className="bg-[#1E293B] rounded-xl p-8 w-[400px] shadow-xl"
           >
-            <div className="space-y-6">
-              <h3 className="text-xl text-[#F8FAFC] font-medium text-center">
+            <div suppressHydrationWarning className="space-y-6">
+              <h3 suppressHydrationWarning className="text-xl text-[#F8FAFC] font-medium text-center">
                 {showSuccess ? 'Package Downloaded!' : buildStep === 3 ? 'COA Package Ready' : 'Building COA Package'}
               </h3>
               
@@ -564,6 +572,45 @@ function COABuildModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
   )
 }
 
+// Add this new component
+function ScenarioAnalysisResults() {
+  return (
+    <div className="bg-[#1E293B] rounded-lg p-4 mt-6">
+      <div className="flex items-center gap-3 mb-4">
+        <Activity className="w-5 h-5 text-[#3B82F6]" />
+        <h3 className="text-[#94A3B8]">Scenario Analysis Results</h3>
+      </div>
+
+      <div className="grid grid-cols-3 gap-6">
+        {/* Historical Cases */}
+        <div className="bg-[#0F172A] p-4 rounded-lg">
+          <div className="flex flex-col items-center text-center">
+            <span className="text-3xl font-bold text-[#F8FAFC] mb-2">2.7M</span>
+            <span className="text-sm text-[#94A3B8]">Historical Cases Analyzed</span>
+          </div>
+        </div>
+
+        {/* Simulated Scenarios */}
+        <div className="bg-[#0F172A] p-4 rounded-lg">
+          <div className="flex flex-col items-center text-center">
+            <span className="text-3xl font-bold text-[#F8FAFC] mb-2">5.3M</span>
+            <span className="text-sm text-[#94A3B8]">Simulated Scenarios</span>
+          </div>
+        </div>
+
+        {/* Analysis Confidence */}
+        <div className="bg-[#0F172A] p-4 rounded-lg">
+          <div className="flex flex-col items-center text-center">
+            <span className="text-3xl font-bold text-[#F8FAFC] mb-2">98.7%</span>
+            <span className="text-sm text-[#94A3B8]">Analysis Confidence</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Wrap the page component
 export default function OutputPage() {
   const [selectedCOA, setSelectedCOA] = useState<number | null>(null)
   const [showBuildModal, setShowBuildModal] = useState(false)
@@ -611,12 +658,12 @@ export default function OutputPage() {
 
               {/* Three Column Layout for Main Info */}
               <div className="grid grid-cols-3 gap-6">
-                {/* Affected Facilities */}
-                <div className="space-y-4">
-                  <h3 className="text-[#94A3B8] flex items-center gap-2">
+                {/* Affected Facilities - Updated styling */}
+                <div className="bg-[#1E293B] rounded-lg p-4">
+                  <div className="flex items-center gap-3 mb-4">
                     <Signal className="w-5 h-5 text-[#3B82F6]" />
-                    Affected Facilities
-                  </h3>
+                    <h3 className="text-[#94A3B8]">Affected Facilities</h3>
+                  </div>
                   {[
                     {
                       name: "Power distribution substation",
@@ -641,12 +688,15 @@ export default function OutputPage() {
                   ))}
                 </div>
 
-                {/* Environmental Conditions - NEW COMPONENT */}
+                {/* Environmental Conditions */}
                 <EnvironmentalConditions />
 
-                {/* Mission Objectives - NEW COMPONENT */}
+                {/* Mission Objectives */}
                 <MissionObjectives />
               </div>
+
+              {/* Add Scenario Analysis Results here - after the three columns */}
+              <ScenarioAnalysisResults />
             </div>
           </div>
         </div>
@@ -694,7 +744,7 @@ export default function OutputPage() {
       </motion.div>
       
       {showBuildModal && (
-        <COABuildModal 
+        <DynamicCOABuildModal 
           isOpen={showBuildModal} 
           onClose={() => setShowBuildModal(false)} 
         />
